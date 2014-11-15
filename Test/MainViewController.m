@@ -211,9 +211,8 @@
         CGPoint point = [sender locationOfTouch:0 inView:window];
         NSLog(@"Tap Point: %@", NSStringFromCGPoint(point));
     }else if ([sender state] == UIGestureRecognizerStateBegan){
-        NSLog(@"Long press.");
+        NSLog(@"Long press");
         NSLog(@"長押し開始のタイミング。何もしない");
-        
     }
 }
 
