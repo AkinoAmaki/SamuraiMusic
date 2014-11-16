@@ -12,9 +12,7 @@
     
 }
 @property float startTime;
-@property float startX;
-@property float startY;
-@property float endX;
-@property float endY;
+@property float x;
+@property float y;
 
 @end
