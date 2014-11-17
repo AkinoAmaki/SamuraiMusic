@@ -10,8 +10,4 @@
 
 @implementation MainView
 
-- (void)jojo{
-    NSLog(@"jojo");
-}
-
 @end

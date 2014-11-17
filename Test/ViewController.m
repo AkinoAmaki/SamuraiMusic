@@ -21,7 +21,7 @@
 }
 
 - (void)viewDidAppear:(BOOL)animated{
-    NSLog(@"ViewController");
+
 }
 
 - (void)backScreenTest{

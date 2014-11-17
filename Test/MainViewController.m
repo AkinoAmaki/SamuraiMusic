@@ -165,7 +165,7 @@
             mbAnimation1 = [[MBAnimationView alloc] init];
             [mbAnimation1 setAnimationImage:@"pipo-btleffect007.png" :120 :120 :14];
             mbAnimation1.frame = CGRectMake(userInfoX - 60, userInfoY - 60, 120, 120);
-            mbAnimation1.animationDuration = animationDuration;
+            mbAnimation1.animationDuration = 1;
             mbAnimation1.tag = gestureNumber + 1;
             [self.view addSubview:mbAnimation1];
             [mbAnimation1 startAnimating];
@@ -178,7 +178,7 @@
             mbAnimation2 = [[MBAnimationView alloc] init];
             [mbAnimation2 setAnimationImage:@"pipo-btleffect007.png" :120 :120 :14];
             mbAnimation2.frame = CGRectMake(userInfoX - 60, userInfoY - 60, 120, 120);
-            mbAnimation2.animationDuration = animationDuration;
+            mbAnimation2.animationDuration = 1;
             mbAnimation2.tag = gestureNumber + 1;
             [self.view addSubview:mbAnimation2];
             [mbAnimation2 startAnimating];
@@ -191,7 +191,7 @@
             mbAnimation3 = [[MBAnimationView alloc] init];
             [mbAnimation3 setAnimationImage:@"pipo-btleffect007.png" :120 :120 :14];
             mbAnimation3.frame = CGRectMake(userInfoX - 60, userInfoY - 60, 120, 120);
-            mbAnimation3.animationDuration = animationDuration;
+            mbAnimation3.animationDuration = 1;
             mbAnimation3.tag = gestureNumber + 1;
             [self.view addSubview:mbAnimation3];
             [mbAnimation3 startAnimating];
@@ -210,9 +210,9 @@
         if (mbAnimation1 == nil) {
             NSLog(@"mbAnimation1起動");
             mbAnimation1 = [[MBAnimationView alloc] init];
-            [mbAnimation1 setAnimationImage:@"pipo-btleffect007.png" :120 :120 :14];
+            [mbAnimation1 setAnimationImage:@"PanGesture.png" :120 :120 :20];
             mbAnimation1.frame = CGRectMake(userInfoX - 60, userInfoY - 60, 120, 120);
-            mbAnimation1.animationDuration = animationDuration;
+            mbAnimation1.animationDuration = 1;
             mbAnimation1.tag = gestureNumber + 1;
             [self.view addSubview:mbAnimation1];
             [mbAnimation1 startAnimating];
@@ -223,9 +223,9 @@
         }else if (mbAnimation2 == nil){
             NSLog(@"mbAnimation2起動");
             mbAnimation2 = [[MBAnimationView alloc] init];
-            [mbAnimation2 setAnimationImage:@"pipo-btleffect007.png" :120 :120 :14];
+            [mbAnimation2 setAnimationImage:@"PanGesture.png" :120 :120 :20];
             mbAnimation2.frame = CGRectMake(userInfoX - 60, userInfoY - 60, 120, 120);
-            mbAnimation2.animationDuration = animationDuration;
+            mbAnimation2.animationDuration = 1;
             mbAnimation2.tag = gestureNumber + 1;
             [self.view addSubview:mbAnimation2];
             [mbAnimation2 startAnimating];
@@ -236,9 +236,9 @@
         }else if (mbAnimation3 == nil){
             NSLog(@"mbAnimation3起動");
             mbAnimation3 = [[MBAnimationView alloc] init];
-            [mbAnimation3 setAnimationImage:@"pipo-btleffect007.png" :120 :120 :14];
+            [mbAnimation3 setAnimationImage:@"PanGesture.png" :120 :120 :20];
             mbAnimation3.frame = CGRectMake(userInfoX - 60, userInfoY - 60, 120, 120);
-            mbAnimation3.animationDuration = animationDuration;
+            mbAnimation3.animationDuration = 1;
             mbAnimation3.tag = gestureNumber + 1;
             [self.view addSubview:mbAnimation3];
             [mbAnimation3 startAnimating];
@@ -251,9 +251,9 @@
         if (mbAnimation1 == nil) {
             NSLog(@"mbAnimation1起動");
             mbAnimation1 = [[MBAnimationView alloc] init];
-            [mbAnimation1 setAnimationImage:@"pipo-btleffect007.png" :120 :120 :14];
+            [mbAnimation1 setAnimationImage:@"LongPressGesture.png" :120 :120 :14];
             mbAnimation1.frame = CGRectMake(userInfoX - 60, userInfoY - 60, 120, 120);
-            mbAnimation1.animationDuration = animationDuration;
+            mbAnimation1.animationDuration = 0.85;
             mbAnimation1.tag = gestureNumber + 1;
             [self.view addSubview:mbAnimation1];
             [mbAnimation1 startAnimating];
@@ -264,9 +264,9 @@
         }else if (mbAnimation2 == nil){
             NSLog(@"mbAnimation2起動");
             mbAnimation2 = [[MBAnimationView alloc] init];
-            [mbAnimation2 setAnimationImage:@"pipo-btleffect007.png" :120 :120 :14];
+            [mbAnimation2 setAnimationImage:@"LongPressGesture.png" :120 :120 :14];
             mbAnimation2.frame = CGRectMake(userInfoX - 60, userInfoY - 60, 120, 120);
-            mbAnimation2.animationDuration = animationDuration;
+            mbAnimation2.animationDuration = 1;
             mbAnimation2.tag = gestureNumber + 1;
             [self.view addSubview:mbAnimation2];
             [mbAnimation2 startAnimating];
@@ -277,9 +277,9 @@
         }else if (mbAnimation3 == nil){
             NSLog(@"mbAnimation3起動");
             mbAnimation3 = [[MBAnimationView alloc] init];
-            [mbAnimation3 setAnimationImage:@"pipo-btleffect007.png" :120 :120 :14];
+            [mbAnimation3 setAnimationImage:@"LongPressGesture.png" :120 :120 :14];
             mbAnimation3.frame = CGRectMake(userInfoX - 60, userInfoY - 60, 120, 120);
-            mbAnimation3.animationDuration = animationDuration;
+            mbAnimation3.animationDuration = 1;
             mbAnimation3.tag = gestureNumber + 1;
             [self.view addSubview:mbAnimation3];
             [mbAnimation3 startAnimating];
@@ -497,6 +497,7 @@
         if([l isKindOfClass:[LongPressGesture class]]) cg = CGPointMake(mbAnimation3.frame.origin.x, mbAnimation3.frame.origin.y);
     }else{
         NSLog(@"タップした座標が合っていない");
+        NSLog(@"x:%f y:%f",mbAnimation1.frame.origin.x,mbAnimation1.frame.origin.y);
         return cg;
     }
     

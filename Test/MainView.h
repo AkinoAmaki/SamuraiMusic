@@ -11,7 +11,4 @@
 @interface MainView : UIView{
 }
 
-
-- (void)jojo;
-
 @end

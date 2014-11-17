@@ -28,6 +28,7 @@
     MBAnimationView *mbAnimation3;
 }
 
+- (IBAction)StageStart:(id)sender;
 
 - (void)createTapGestureRecognizers:(UIView *)targetView;
 - (void)createPanGestureRecognizers:(UIView *)targetView;
