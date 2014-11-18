@@ -17,7 +17,7 @@
     StageEditView *stageEditView;
     AVAudioPlayer *audio;
     UIView *allUtilityView;
-    UIView *allIconView;
+    UIButton *playButton;
     UIImageView *singleTapImageView;
     UIImageView *panImageView;
     UIImageView *longPressImageView;
@@ -28,6 +28,7 @@
     CGPoint initPoint;
     NSMutableArray *iconArray;
     NSMutableArray *exceptionArea;
+    NSTimeInterval previousSliderValue;
     int iconTagNumber; //アイコン毎にユニークなタグ番号
 }
 

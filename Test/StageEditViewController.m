@@ -17,7 +17,6 @@
     //シークバー・再生ボタン等のツールビューを取りまとめるビューの初期化
     allUtilityView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, [UIScreen mainScreen].bounds.size.height)];
     [self.view addSubview:allUtilityView];
-    allUtilityView.userInteractionEnabled = YES;
     
     //シングルタップ・スワイプ・ロングプレスの設定元画像を設置する
     singleTapImageView = [[UIImageView alloc] initWithImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"LongPressGesture11 0.51.54" ofType:@"png"]]];
@@ -45,14 +44,24 @@
     NSString *path = [[NSBundle mainBundle] pathForResource:@"Won't Go Home Without You Lyrics" ofType:@"mp3"];
     NSURL *url = [NSURL fileURLWithPath:path];
     audio = [[AVAudioPlayer alloc] initWithContentsOfURL:url error:nil];
-//    [audio play];
+    [audio prepareToPlay];
     audio.volume = 0.2f;
+    
+    //再生・一時停止ボタンを設置
+    playButton = [[UIButton alloc] initWithFrame:CGRectMake(0, 0, 30, 30)];
+    playButton.center = CGPointMake([UIScreen mainScreen].bounds.size.width / 2, [UIScreen mainScreen].bounds.size.height - 45);
+    [allUtilityView addSubview:playButton];
+    [playButton setBackgroundImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"start" ofType:@"png"]] forState:UIControlStateNormal];  // 画像をセットする
+    // ボタンが押された時にhogeメソッドを呼び出す
+    [playButton addTarget:self
+                   action:@selector(playAudio:) forControlEvents:UIControlEventTouchUpInside];
     
     //再生のシークバーを設置
     timeSlider = [[UISlider alloc] initWithFrame:CGRectMake(0, 0, 200, 10)];
     timeSlider.center = CGPointMake([UIScreen mainScreen].bounds.size.width / 2, [UIScreen mainScreen].bounds.size.height - 25);
     [allUtilityView addSubview:timeSlider];
     timeSlider.maximumValue = audio.duration;
+    previousSliderValue = 0;
     [timeSlider addTarget:self action:@selector(timeSliderChanged:) forControlEvents:UIControlEventValueChanged];
     timer = [NSTimer scheduledTimerWithTimeInterval:0.1
                                             target:self
@@ -77,6 +86,20 @@
     
     //ラベルの内容をアップデート
     [self updateLabel];
+}
+
+//曲の再生・一時停止を行う
+- (IBAction)playAudio:(id)sender{
+    if(!audio.isPlaying){
+        //再生していないとき
+        [audio play];
+        [playButton setBackgroundImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"stop" ofType:@"png"]] forState:UIControlStateNormal];  // 一時停止の画像をセットする
+    }else{
+        [audio pause];
+        audio.currentTime = timeSlider.value;
+        [playButton setBackgroundImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"start" ofType:@"png"]] forState:UIControlStateNormal];  // 画像をセットする
+    }
+    
 }
 
 //ラベルの内容をアップデートする
@@ -105,13 +128,35 @@
     [self updateLabel];
 }
 
-//タイムスライダーの値が変更されるたびに呼び出されるとともに、edit画面で貼り付けたアイコンを全て削除する
+//ハンドでタイムスライダーの値を変更するたびに呼び出される。edit画面で貼り付けたアイコンを全て削除する。また、シークした先にアニメーションのビューがあればそれを表示させる
 -(void)timeSliderChanged:(UISlider*)slider{
-    [audio setCurrentTime:timeSlider.value];
-    [self updateLabel];
-//    for (UIView *view in self.view.subviews) {
-//        
-//    }
+    if([slider state] == UIGestureRecognizerStateBegan){
+        [audio setCurrentTime:timeSlider.value];
+        [self updateLabel];
+        for (UIView *view in allUtilityView.subviews) {
+            //タグが付いているということは、アイコン作成に成功しているということ。その他のツールビュー（再生ボタンやシークバー等）はタグが一切ついていないため、消えることはない。
+            if (view.tag >= 1) {
+                [view removeFromSuperview];
+            }
+        }
+
+        if(![audio isPlaying]){
+            //一時停止しているとき。アニメーションのビューは画像は表示させるが、実際にアニメーションはさせない
+            if(audio.currentTime > previousSliderValue){
+                //早送りしたとき。
+            }else{
+                //早戻ししたとき。
+            }
+        }else{
+            //再生しているとき。実際にアニメーションさせる。
+            if(audio.currentTime > previousSliderValue){
+                //早送りしたとき。
+            }else{
+                //早戻ししたとき。
+            }
+        }
+
+    }
 }
 
 
@@ -183,6 +228,8 @@
             sender.view.center = initPoint; //スワイプの終点がExceptionAreaに入っていたらスワイプ開始時点にViewを戻す
         }else{
             //アイコン作成に成功した時、アイコンを指定の位置に置き、そのコピーを元の位置に作成し、アイコンからはコピー能力を消し、代わりにダブルタップしたら消えるようにする。
+            
+            //まず、作成に成功したアイコンの所属をallUtilityView(作成用の元アイコン)からallIconView(作成に成功したアイコン)に変更する。
             if(initPoint.x == 60){
                 //シングルタップのアイコンが作成された時
                 //新しいコピーを元の位置に作成する
