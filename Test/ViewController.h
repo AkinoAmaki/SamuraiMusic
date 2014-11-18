@@ -9,8 +9,11 @@
 #import <UIKit/UIKit.h>
 
 @interface ViewController : UIViewController{
-}
+    float singleTapGestureDuration;
+    float panGestureDuration;
+    float longPressGestureDuration;
 
+}
 
 @end
 

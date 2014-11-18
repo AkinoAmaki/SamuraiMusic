@@ -14,6 +14,11 @@
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
     
+    //シークバー・再生ボタン等のツールビューを取りまとめるビューの初期化
+    allUtilityView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, [UIScreen mainScreen].bounds.size.height)];
+    [self.view addSubview:allUtilityView];
+    allUtilityView.userInteractionEnabled = YES;
+    
     //シングルタップ・スワイプ・ロングプレスの設定元画像を設置する
     singleTapImageView = [[UIImageView alloc] initWithImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"LongPressGesture11 0.51.54" ofType:@"png"]]];
     panImageView = [[UIImageView alloc] initWithImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"LongPressGesture12 0.51.54" ofType:@"png"]]];
@@ -27,9 +32,9 @@
     panImageView.userInteractionEnabled = YES;
     longPressImageView.userInteractionEnabled = YES;
     
-    [self.view addSubview:singleTapImageView];
-    [self.view addSubview:panImageView];
-    [self.view addSubview:longPressImageView];
+    [allUtilityView addSubview:singleTapImageView];
+    [allUtilityView addSubview:panImageView];
+    [allUtilityView addSubview:longPressImageView];
 
     [self setDragCopyAction:singleTapImageView];
     [self setDragCopyAction:panImageView];
@@ -46,7 +51,7 @@
     //再生のシークバーを設置
     timeSlider = [[UISlider alloc] initWithFrame:CGRectMake(0, 0, 200, 10)];
     timeSlider.center = CGPointMake([UIScreen mainScreen].bounds.size.width / 2, [UIScreen mainScreen].bounds.size.height - 25);
-    [self.view addSubview:timeSlider];
+    [allUtilityView addSubview:timeSlider];
     timeSlider.maximumValue = audio.duration;
     [timeSlider addTarget:self action:@selector(timeSliderChanged:) forControlEvents:UIControlEventValueChanged];
     timer = [NSTimer scheduledTimerWithTimeInterval:0.1
@@ -55,14 +60,20 @@
                                           userInfo:nil
                                            repeats:YES];
     [timer fire];
+    
+    //設置するアイコンの設定を初期化
+    iconArray = [[NSMutableArray alloc] init];
+    
+    //タグナンバーを初期化
+    iconTagNumber = 1;
 }
 
 - (void)viewDidAppear:(BOOL)animated{
     //現在の再生時刻を表すラベル(currentTimeLabel)と、残りの再生時間を表すラベル(durationLabel)を設定
     currentTimeLabel = [[UILabel alloc] initWithFrame:CGRectMake(5,[UIScreen mainScreen].bounds.size.height - 30 - 5, 100, 30)];
     durationLabel    = [[UILabel alloc] initWithFrame:CGRectMake([UIScreen mainScreen].bounds.size.width - 50 - 5, [UIScreen mainScreen].bounds.size.height - 30 - 5, 100, 30)];
-    [self.view addSubview:currentTimeLabel];
-    [self.view addSubview:durationLabel];
+    [allUtilityView addSubview:currentTimeLabel];
+    [allUtilityView addSubview:durationLabel];
     
     //ラベルの内容をアップデート
     [self updateLabel];
@@ -94,10 +105,13 @@
     [self updateLabel];
 }
 
-//タイムスライダーの値が変更されるたびに呼び出される
+//タイムスライダーの値が変更されるたびに呼び出されるとともに、edit画面で貼り付けたアイコンを全て削除する
 -(void)timeSliderChanged:(UISlider*)slider{
     [audio setCurrentTime:timeSlider.value];
     [self updateLabel];
+//    for (UIView *view in self.view.subviews) {
+//        
+//    }
 }
 
 
@@ -150,7 +164,7 @@
 }
 
 
-//イメージがドラッグされ、アイコン作成に成功した時、そのコピーを元の位置に作成する
+//イメージがドラッグされ、アイコン作成に成功した時の挙動を定義する（アイコンのコピーを元の位置に作成する等）
 - (void)panActionWithCopy : (UIPanGestureRecognizer *)sender {
     if ([sender state] == UIGestureRecognizerStateBegan){
         sender.view.alpha = 0.4f;
@@ -170,16 +184,19 @@
         }else{
             //アイコン作成に成功した時、アイコンを指定の位置に置き、そのコピーを元の位置に作成し、アイコンからはコピー能力を消し、代わりにダブルタップしたら消えるようにする。
             if(initPoint.x == 60){
-                NSLog(@"copy");
                 //シングルタップのアイコンが作成された時
                 //新しいコピーを元の位置に作成する
                 UIImageView *single = [[UIImageView alloc] initWithImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"LongPressGesture11 0.51.54" ofType:@"png"]]];
                 single.frame = CGRectMake(10, [UIScreen mainScreen].bounds.size.height - single.image.size.height - 40, single.image.size.width - 20, single.image.size.height - 20);
                 single.userInteractionEnabled = YES;
-                [self.view addSubview:single];
+                [allUtilityView addSubview:single];
                 
                 //新しいコピーにドラッグ能力・コピー能力をもたせる
                 [self setDragCopyAction:single];
+                
+                //作成に成功したアイコンをiconArrayに格納する
+                Icon *i1 = [[Icon alloc] initWithData:sender.view.center iconType:1 startTime:audio.currentTime endTime:(audio.currentTime + singleTapGestureDuration)];
+                [iconArray addObject:i1];
             }else if (initPoint.x == 160){
                 //スワイプのアイコンが作成された時
                 //新しいコピーを元の位置に作成する
@@ -187,10 +204,14 @@
                 pan = [[UIImageView alloc] initWithImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"LongPressGesture12 0.51.54" ofType:@"png"]]];
                 pan.frame = CGRectMake(110, [UIScreen mainScreen].bounds.size.height - pan.image.size.height - 40, pan.image.size.width - 20, pan.image.size.height - 20);
                 pan.userInteractionEnabled = YES;
-                [self.view addSubview:pan];
+                [allUtilityView addSubview:pan];
 
                 //新しいコピーにドラッグ能力・コピー能力をもたせる
                 [self setDragCopyAction:pan];
+                
+                //作成に成功したアイコンをiconArrayに格納する
+                Icon *i2 = [[Icon alloc] initWithData:sender.view.center iconType:2 startTime:audio.currentTime endTime:(audio.currentTime + panGestureDuration)];
+                [iconArray addObject:i2];
             }else if (initPoint.x == 260){
                 //ロングプレスのアイコンが作成された時
                 //新しいコピーを元の位置に作成する
@@ -198,10 +219,14 @@
                 longPress = [[UIImageView alloc] initWithImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"LongPressGesture13 0.51.54" ofType:@"png"]]];
                 longPress.frame = CGRectMake(210, [UIScreen mainScreen].bounds.size.height - longPress.image.size.height - 40, longPress.image.size.width - 20, longPress.image.size.height - 20);
                 longPress.userInteractionEnabled = YES;
-                [self.view addSubview:longPress];
+                [allUtilityView addSubview:longPress];
                 
                 //新しいコピーにドラッグ能力・コピー能力をもたせる
                 [self setDragCopyAction:longPress];
+                
+                //作成に成功したアイコンをiconArrayに格納する
+                Icon *i3 = [[Icon alloc] initWithData:sender.view.center iconType:3 startTime:audio.currentTime endTime:(audio.currentTime + singleTapGestureDuration)];
+                [iconArray addObject:i3];
             }
             
             //代わりに、単なるドラッグ能力とダブルタップしたら消えるジェスチャを加える。
@@ -209,6 +234,10 @@
             UITapGestureRecognizer *doubleTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(doubleTapMethod:)]; //ダブルタップに反応させる
             [doubleTapGesture setNumberOfTapsRequired:2];
             [sender.view addGestureRecognizer:doubleTapGesture];
+            
+            //アイコンにタグナンバーを与える
+            sender.view.tag = iconTagNumber++;
+            NSLog(@"%@",iconArray);
         }
     }
     // ドラッグで移動した距離を取得する
@@ -236,7 +265,11 @@
 }
 
 - (void)doubleTapMethod : (UITapGestureRecognizer *)sender {
+    //ビューを消去
     [sender.view removeFromSuperview];
+    
+    //iconArrayに登録されているアイコンも消去(removeすると配列内のビューの位置番号とtagの番号がずれてしまうので、代わりにnullを詰める)
+    [iconArray replaceObjectAtIndex:sender.view.tag - 1 withObject:[NSNull null]];
 }
 
 

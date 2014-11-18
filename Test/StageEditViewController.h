@@ -9,12 +9,15 @@
 #import "ViewController.h"
 #import "StageEditView.h"
 #import "UIView+Origin.h"
+#import "Icon.h"
 #import <AVFoundation/AVFoundation.h>
 
 
 @interface StageEditViewController : ViewController{
     StageEditView *stageEditView;
     AVAudioPlayer *audio;
+    UIView *allUtilityView;
+    UIView *allIconView;
     UIImageView *singleTapImageView;
     UIImageView *panImageView;
     UIImageView *longPressImageView;
@@ -23,7 +26,9 @@
     UISlider *timeSlider;
     NSTimer *timer;
     CGPoint initPoint;
+    NSMutableArray *iconArray;
     NSMutableArray *exceptionArea;
+    int iconTagNumber; //アイコン毎にユニークなタグ番号
 }
 
 @end

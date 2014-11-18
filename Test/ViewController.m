@@ -17,7 +17,9 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
-
+    singleTapGestureDuration = 1;
+    panGestureDuration = 1;
+    longPressGestureDuration = 1.4;
 }
 
 - (void)viewDidAppear:(BOOL)animated{
