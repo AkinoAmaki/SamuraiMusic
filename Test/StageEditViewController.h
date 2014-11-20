@@ -10,6 +10,7 @@
 #import "StageEditView.h"
 #import "UIView+Origin.h"
 #import "Icon.h"
+#import "MBAnimationView.h"
 #import <AVFoundation/AVFoundation.h>
 
 
@@ -27,8 +28,9 @@
     NSTimer *timer;
     CGPoint initPoint;
     NSMutableArray *iconArray;
+    NSMutableArray *animatingNowIconArray;
     NSMutableArray *exceptionArea;
-    NSTimeInterval previousSliderValue;
+    int zenkai;
     int iconTagNumber; //アイコン毎にユニークなタグ番号
 }
 

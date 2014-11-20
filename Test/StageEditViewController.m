@@ -16,6 +16,7 @@
     
     //シークバー・再生ボタン等のツールビューを取りまとめるビューの初期化
     allUtilityView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, [UIScreen mainScreen].bounds.size.height)];
+    allUtilityView.backgroundColor = [UIColor blackColor];
     [self.view addSubview:allUtilityView];
     
     //シングルタップ・スワイプ・ロングプレスの設定元画像を設置する
@@ -44,7 +45,7 @@
     NSString *path = [[NSBundle mainBundle] pathForResource:@"Won't Go Home Without You Lyrics" ofType:@"mp3"];
     NSURL *url = [NSURL fileURLWithPath:path];
     audio = [[AVAudioPlayer alloc] initWithContentsOfURL:url error:nil];
-    [audio prepareToPlay];
+//    [audio prepareToPlay];
     audio.volume = 0.2f;
     
     //再生・一時停止ボタンを設置
@@ -61,8 +62,10 @@
     timeSlider.center = CGPointMake([UIScreen mainScreen].bounds.size.width / 2, [UIScreen mainScreen].bounds.size.height - 25);
     [allUtilityView addSubview:timeSlider];
     timeSlider.maximumValue = audio.duration;
-    previousSliderValue = 0;
     [timeSlider addTarget:self action:@selector(timeSliderChanged:) forControlEvents:UIControlEventValueChanged];
+    [timeSlider addTarget:self action:@selector(touchUpInside) forControlEvents:UIControlEventTouchUpInside];
+    [timeSlider addTarget:self action:@selector(touchUpOutside) forControlEvents:UIControlEventTouchUpOutside];
+    
     timer = [NSTimer scheduledTimerWithTimeInterval:0.1
                                             target:self
                                           selector:@selector(upDateSlider:)
@@ -75,12 +78,29 @@
     
     //タグナンバーを初期化
     iconTagNumber = 1;
+    
+    //タイムスライダーの値を変更する前の、音楽のcurrentTime
+    zenkai = 0;
+    
+    //アニメーション中のアイコンを管理する配列
+    animatingNowIconArray = [[NSMutableArray alloc] init];
+
+}
+
+- (void)touchUpInside{
+    NSLog(@"スライダーの編集が完了しました");
+}
+
+- (void)touchUpOutside{
+    NSLog(@"スライダーの編集が完了しました");
 }
 
 - (void)viewDidAppear:(BOOL)animated{
     //現在の再生時刻を表すラベル(currentTimeLabel)と、残りの再生時間を表すラベル(durationLabel)を設定
     currentTimeLabel = [[UILabel alloc] initWithFrame:CGRectMake(5,[UIScreen mainScreen].bounds.size.height - 30 - 5, 100, 30)];
     durationLabel    = [[UILabel alloc] initWithFrame:CGRectMake([UIScreen mainScreen].bounds.size.width - 50 - 5, [UIScreen mainScreen].bounds.size.height - 30 - 5, 100, 30)];
+    currentTimeLabel.textColor = [UIColor whiteColor];
+    durationLabel.textColor = [UIColor whiteColor];
     [allUtilityView addSubview:currentTimeLabel];
     [allUtilityView addSubview:durationLabel];
     
@@ -124,41 +144,142 @@
 
 //タイムスライダーの表示をアップデートする
 -(void)upDateSlider:(NSTimer*)timer{
-    timeSlider.value=audio.currentTime;
-    [self updateLabel];
+    if([audio isPlaying]){
+        timeSlider.value = audio.currentTime;
+        zenkai = audio.currentTime;
+        [self updateLabel];
+        [self refleshIcon:YES];
+    }
 }
 
 //ハンドでタイムスライダーの値を変更するたびに呼び出される。edit画面で貼り付けたアイコンを全て削除する。また、シークした先にアニメーションのビューがあればそれを表示させる
 -(void)timeSliderChanged:(UISlider*)slider{
-    if([slider state] == UIGestureRecognizerStateBegan){
-        [audio setCurrentTime:timeSlider.value];
-        [self updateLabel];
-        for (UIView *view in allUtilityView.subviews) {
-            //タグが付いているということは、アイコン作成に成功しているということ。その他のツールビュー（再生ボタンやシークバー等）はタグが一切ついていないため、消えることはない。
-            if (view.tag >= 1) {
-                [view removeFromSuperview];
-            }
-        }
-
-        if(![audio isPlaying]){
-            //一時停止しているとき。アニメーションのビューは画像は表示させるが、実際にアニメーションはさせない
-            if(audio.currentTime > previousSliderValue){
-                //早送りしたとき。
-            }else{
-                //早戻ししたとき。
-            }
-        }else{
-            //再生しているとき。実際にアニメーションさせる。
-            if(audio.currentTime > previousSliderValue){
-                //早送りしたとき。
-            }else{
-                //早戻ししたとき。
-            }
-        }
-
-    }
+    //音楽の再生位置をシークタイムに合わせる
+    [audio setCurrentTime:timeSlider.value];
+    
+    //再生時間・残り時間のラベルを更新
+    [self updateLabel];
+    [self refleshIcon:NO];
+    zenkai = audio.currentTime;
 }
 
+- (void)refleshIcon:(BOOL)isPlaying{
+    //一旦全てのアイコンを削除
+    for (UIView *view in allUtilityView.subviews) {
+        //タグが付いているということは、アイコン作成に成功しているということ。その他のツールビュー（再生ボタンやシークバー等）はタグが一切ついていないため、消えることはない。
+        if (view.tag >= 1) {
+            [view removeFromSuperview];
+        }
+    }
+    if((int)audio.currentTime < zenkai){
+        NSLog(@"xを更新");
+        [animatingNowIconArray removeAllObjects];
+    }
+    
+    if (isPlaying) {
+        //再生中ならアニメーションさせる
+        for (int i = 0; i < [iconArray count]; i++) {
+            Icon *icon = [iconArray objectAtIndex:i];
+            if (![icon isEqual:[NSNull null]] && icon.startTime <= audio.currentTime && icon.endTime >= audio.currentTime && [animatingNowIconArray indexOfObject:icon] == NSNotFound) {
+                MBAnimationView *mb = [[MBAnimationView alloc] init];
+                [animatingNowIconArray addObject:icon];
+                switch (icon.iconType) {
+                    case 1:
+                        //シングルタップの場合
+                    {
+                        [mb setAnimationImage:@"pipo-btleffect007.png" :120 :120 :14];
+                        mb.animationDuration = 1;
+                    }
+                        break;
+                    case 2:
+                        //スワイプの場合
+                    {
+                        [mb setAnimationImage:@"PanGesture.png" :120 :120 :14];
+                        mb.animationDuration = 0.85;
+                    }
+                        
+                        break;
+                    case 3:
+                        //ロングプレスの場合
+                    {
+                        [mb setAnimationImage:@"LongPressGesture.png" :120 :120 :14];
+                        mb.animationDuration = 1;
+                    }
+                        break;
+                    default:
+                        break;
+                }
+                
+                mb.frame = CGRectMake(icon.centerPoint.x - 60, icon.centerPoint.y - 60, 120, 120);
+                [self.view addSubview:mb];
+                [mb startAnimating];
+            }
+        }
+    }else{
+        //一時停止しているときは、アニメーションのビューは画像は表示させるが、実際にアニメーションはさせない
+        for (int i = 0; i < [iconArray count]; i++) {
+            Icon *icon = [iconArray objectAtIndex:i];
+            if (![icon isEqual:[NSNull null]] && icon.startTime <= audio.currentTime && icon.endTime >= audio.currentTime) {
+                switch (icon.iconType) {
+                    case 1:
+                        //シングルタップの場合
+                    {
+                        UIImageView *single = [[UIImageView alloc] initWithImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"LongPressGesture11 0.51.54" ofType:@"png"]]];
+                        single.frame = CGRectMake(0, 0, single.image.size.width - 20, single.image.size.height - 20);
+                        single.center = icon.centerPoint;
+                        single.userInteractionEnabled = YES;
+                        single.tag = icon.iconTagNumber;
+                        [allUtilityView addSubview:single];
+                        //単なるドラッグ能力とダブルタップしたら消えるジェスチャを加える。
+                        [self setDragAction:single]; //単なるドラッグ能力（コピー能力を持たない）
+                        UITapGestureRecognizer *doubleTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(doubleTapMethod:)]; //ダブルタップに反応させる
+                        [doubleTapGesture setNumberOfTapsRequired:2];
+                        [single addGestureRecognizer:doubleTapGesture];
+                    }
+                        break;
+                    case 2:
+                        //スワイプの場合
+                    {
+                        UIImageView *pan;
+                        pan = [[UIImageView alloc] initWithImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"LongPressGesture12 0.51.54" ofType:@"png"]]];
+                        pan.frame = CGRectMake(110, [UIScreen mainScreen].bounds.size.height - pan.image.size.height - 40, pan.image.size.width - 20, pan.image.size.height - 20);
+                        pan.center = icon.centerPoint;
+                        pan.userInteractionEnabled = YES;
+                        pan.tag = icon.iconTagNumber;
+                        [allUtilityView addSubview:pan];
+                        //ドラッグ能力とダブルタップしたら消えるジェスチャを加える。
+                        [self setDragAction:pan]; //単なるドラッグ能力（コピー能力を持たない）
+                        UITapGestureRecognizer *doubleTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(doubleTapMethod:)]; //ダブルタップに反応させる
+                        [doubleTapGesture setNumberOfTapsRequired:2];
+                        [pan addGestureRecognizer:doubleTapGesture];
+                        
+                    }
+                        
+                        break;
+                    case 3:
+                        //ロングプレスの場合
+                    {
+                        UIImageView *longPress;
+                        longPress = [[UIImageView alloc] initWithImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"LongPressGesture13 0.51.54" ofType:@"png"]]];
+                        longPress.frame = CGRectMake(210, [UIScreen mainScreen].bounds.size.height - longPress.image.size.height - 40, longPress.image.size.width - 20, longPress.image.size.height - 20);
+                        longPress.center = icon.centerPoint;
+                        longPress.userInteractionEnabled = YES;
+                        longPress.tag = icon.iconTagNumber;
+                        [allUtilityView addSubview:longPress];
+                        //ドラッグ能力とダブルタップしたら消えるジェスチャを加える。
+                        [self setDragAction:longPress]; //単なるドラッグ能力（コピー能力を持たない）
+                        UITapGestureRecognizer *doubleTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(doubleTapMethod:)]; //ダブルタップに反応させる
+                        [doubleTapGesture setNumberOfTapsRequired:2];
+                        [longPress addGestureRecognizer:doubleTapGesture];
+                    }
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+    }
+}
 
 //イメージのドラッグ機能(ドラッグ後のコピー機能なし)を追加する
 - (void)setDragAction:(UIView *)view{
@@ -178,16 +299,6 @@
         sender.view.alpha = 0.4f;
     }
     
-    if([sender state] == UIGestureRecognizerStateEnded){
-        BOOL isExistInExceptionArea = NO; //スワイプの終点がExceptionAreaに入っていたらYES
-        for (int i = 0; i < [exceptionArea count]; i++) {
-            CGRect tempRect = [[exceptionArea objectAtIndex:i] CGRectValue];
-            if (CGRectIntersectsRect (tempRect, sender.view.frame)) isExistInExceptionArea = YES;
-        }
-        
-        if (isExistInExceptionArea) sender.view.center = initPoint; //スワイプの終点がExceptionAreaに入っていたらスワイプ開始時点にViewを戻す
-        sender.view.alpha = 1.0f;
-    }
     // ドラッグで移動した距離を取得する
     CGPoint p = [sender translationInView:sender.view];
     
@@ -206,6 +317,30 @@
     // これを行わないと、[sender translationInView:]が返す距離は、ドラッグが始まってからの蓄積値となるため、
     // 今回のようなドラッグに合わせてImageを動かしたい場合には、蓄積値をゼロにする
     [sender setTranslation:CGPointZero inView:sender.view];
+
+    
+    if([sender state] == UIGestureRecognizerStateEnded){
+        BOOL isExistInExceptionArea = NO; //スワイプの終点がExceptionAreaに入っていたらYES
+        for (int i = 0; i < [exceptionArea count]; i++) {
+            CGRect tempRect = [[exceptionArea objectAtIndex:i] CGRectValue];
+            if (CGRectIntersectsRect (tempRect, sender.view.frame)) isExistInExceptionArea = YES;
+        }
+        
+        if (isExistInExceptionArea){
+            //スワイプの終点がExceptionAreaに入っていたらスワイプ開始時点にViewを戻す
+            sender.view.center = initPoint;
+        }else{
+            //無事スワイプが完了した場合は、iconArrayで保管されているアイコンのcenter位置を更新する
+            for (int i = 0; i < [iconArray count]; i++) {
+                Icon *icon = [iconArray objectAtIndex:i];
+                if(![icon isEqual:[NSNull null]] && icon.iconTagNumber == sender.view.tag){
+                    icon.centerPoint = sender.view.center;
+                    [iconArray replaceObjectAtIndex:i withObject:icon];
+                }
+            }
+        }
+        sender.view.alpha = 1.0f;
+    }
 }
 
 
@@ -229,6 +364,9 @@
         }else{
             //アイコン作成に成功した時、アイコンを指定の位置に置き、そのコピーを元の位置に作成し、アイコンからはコピー能力を消し、代わりにダブルタップしたら消えるようにする。
             
+            //アイコンにタグナンバーを与える
+            sender.view.tag = iconTagNumber++;
+            
             //まず、作成に成功したアイコンの所属をallUtilityView(作成用の元アイコン)からallIconView(作成に成功したアイコン)に変更する。
             if(initPoint.x == 60){
                 //シングルタップのアイコンが作成された時
@@ -242,7 +380,7 @@
                 [self setDragCopyAction:single];
                 
                 //作成に成功したアイコンをiconArrayに格納する
-                Icon *i1 = [[Icon alloc] initWithData:sender.view.center iconType:1 startTime:audio.currentTime endTime:(audio.currentTime + singleTapGestureDuration)];
+                Icon *i1 = [[Icon alloc] initWithData:sender.view.center iconType:1 startTime:audio.currentTime endTime:(audio.currentTime + singleTapGestureDuration) iconTagNumber:sender.view.tag];
                 [iconArray addObject:i1];
             }else if (initPoint.x == 160){
                 //スワイプのアイコンが作成された時
@@ -257,7 +395,7 @@
                 [self setDragCopyAction:pan];
                 
                 //作成に成功したアイコンをiconArrayに格納する
-                Icon *i2 = [[Icon alloc] initWithData:sender.view.center iconType:2 startTime:audio.currentTime endTime:(audio.currentTime + panGestureDuration)];
+                Icon *i2 = [[Icon alloc] initWithData:sender.view.center iconType:2 startTime:audio.currentTime endTime:(audio.currentTime + panGestureDuration) iconTagNumber:sender.view.tag];
                 [iconArray addObject:i2];
             }else if (initPoint.x == 260){
                 //ロングプレスのアイコンが作成された時
@@ -272,7 +410,7 @@
                 [self setDragCopyAction:longPress];
                 
                 //作成に成功したアイコンをiconArrayに格納する
-                Icon *i3 = [[Icon alloc] initWithData:sender.view.center iconType:3 startTime:audio.currentTime endTime:(audio.currentTime + singleTapGestureDuration)];
+                Icon *i3 = [[Icon alloc] initWithData:sender.view.center iconType:3 startTime:audio.currentTime endTime:(audio.currentTime + singleTapGestureDuration) iconTagNumber:sender.view.tag];
                 [iconArray addObject:i3];
             }
             
@@ -281,10 +419,8 @@
             UITapGestureRecognizer *doubleTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(doubleTapMethod:)]; //ダブルタップに反応させる
             [doubleTapGesture setNumberOfTapsRequired:2];
             [sender.view addGestureRecognizer:doubleTapGesture];
-            
-            //アイコンにタグナンバーを与える
-            sender.view.tag = iconTagNumber++;
             NSLog(@"%@",iconArray);
+
         }
     }
     // ドラッグで移動した距離を取得する

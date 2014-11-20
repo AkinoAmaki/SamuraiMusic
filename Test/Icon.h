@@ -11,11 +11,11 @@
 @interface Icon : UIView
 
 @property int iconType; //1ならシングルタップ、2ならスワイプ、3ならロングプレス
-@property CGPoint *centerPoint; //アイコンのcenter
+@property CGPoint centerPoint; //アイコンのcenter
 @property NSTimeInterval startTime; //アニメーション開始時間
 @property NSTimeInterval endTime;   //アニメーション終了時間
 @property int iconTagNumber;
 
--(id)initWithData:(CGPoint)center iconType:(int)iconType startTime:(NSTimeInterval)startTime endTime:(NSTimeInterval)endTime;
+-(id)initWithData:(CGPoint)center iconType:(int)iconType startTime:(NSTimeInterval)startTime endTime:(NSTimeInterval)endTime iconTagNumber:(int)iconTagNumber;
 
 @end
