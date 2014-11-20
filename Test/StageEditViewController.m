@@ -84,6 +84,10 @@
     
     //アニメーション中のアイコンを管理する配列
     animatingNowIconArray = [[NSMutableArray alloc] init];
+    
+    singleTapAnimationDuration = 1;
+    panAnimationDuration = 0.85;
+    longPressAnimationDuration = 1;
 
 }
 
@@ -182,20 +186,24 @@
             Icon *icon = [iconArray objectAtIndex:i];
             if (![icon isEqual:[NSNull null]] && icon.startTime <= audio.currentTime && icon.endTime >= audio.currentTime && [animatingNowIconArray indexOfObject:icon] == NSNotFound) {
                 MBAnimationView *mb = [[MBAnimationView alloc] init];
+                mb.userInteractionEnabled = YES;
+                mb.tag = icon.iconTagNumber;
                 [animatingNowIconArray addObject:icon];
                 switch (icon.iconType) {
                     case 1:
                         //シングルタップの場合
                     {
                         [mb setAnimationImage:@"pipo-btleffect007.png" :120 :120 :14];
-                        mb.animationDuration = 1;
+                        mb.animationDuration = singleTapAnimationDuration;
+                        [self createTapGestureRecognizers:mb];
                     }
                         break;
                     case 2:
                         //スワイプの場合
                     {
                         [mb setAnimationImage:@"PanGesture.png" :120 :120 :14];
-                        mb.animationDuration = 0.85;
+                        mb.animationDuration = panAnimationDuration;
+                        [self createPanGestureRecognizers:mb];
                     }
                         
                         break;
@@ -203,7 +211,8 @@
                         //ロングプレスの場合
                     {
                         [mb setAnimationImage:@"LongPressGesture.png" :120 :120 :14];
-                        mb.animationDuration = 1;
+                        mb.animationDuration = longPressAnimationDuration;
+                        [self createLongPressGestureRecognizers:mb];
                     }
                         break;
                     default:
@@ -454,6 +463,163 @@
     //iconArrayに登録されているアイコンも消去(removeすると配列内のビューの位置番号とtagの番号がずれてしまうので、代わりにnullを詰める)
     [iconArray replaceObjectAtIndex:sender.view.tag - 1 withObject:[NSNull null]];
 }
+
+- (void)createTapGestureRecognizers:(UIView *)targetView {
+    UITapGestureRecognizer *singleFingerSingleTap = [[UITapGestureRecognizer alloc]
+                                                     initWithTarget:self action:@selector(handleSingleTap:)];
+    [targetView addGestureRecognizer:singleFingerSingleTap];
+}
+
+- (void)handleSingleTap:(UITapGestureRecognizer *)sender {
+    UIWindow *window = [[[UIApplication sharedApplication] delegate] window];
+    CGPoint point = [sender locationOfTouch:0 inView:window];
+    NSLog(@"Tap Point: %@", NSStringFromCGPoint(point));
+    Icon *i = [iconArray objectAtIndex:sender.view.tag - 1];
+    CGPoint p = [self accuracyOfTapGesture:CGPointMake(point.x, point.y) MBAnimation:(MBAnimationView *)sender.view gestureStartTime:(i.startTime + singleTapAnimationDuration)];
+    if(p.x == 0 && p.y == 0){
+        NSLog(@"失敗");
+        [sender.view removeFromSuperview];
+    }else{
+        NSLog(@"成功");
+        MBAnimationView *mb = [[MBAnimationView alloc] init];
+        [mb setAnimationImage:@"pipo-btleffect078.png" :120 :120 :14];
+        mb.frame = CGRectMake(p.x, p.y, 120, 120);
+        mb.animationDuration = 0.5;
+        [self.view addSubview:mb];
+        [mb startAnimating];
+        
+    }
+}
+
+- (void)createPanGestureRecognizers:(UIView *)targetView {
+    UIPanGestureRecognizer *panGestureRecognizer = [[UIPanGestureRecognizer alloc]
+                                                    initWithTarget:self action:@selector(handlePanGesture:)];
+    [targetView addGestureRecognizer:panGestureRecognizer];
+}
+
+- (void)handlePanGesture:(UIPanGestureRecognizer *)sender {
+    if ([sender state] == UIGestureRecognizerStateBegan){
+        UIWindow *window = [[[UIApplication sharedApplication] delegate] window];
+        CGPoint point = [sender locationOfTouch:0 inView:window];
+        Icon *i = [iconArray objectAtIndex:sender.view.tag - 1];
+        CGPoint p = [self accuracyOfPanGesture:CGPointMake(point.x, point.y) MBAnimation:(MBAnimationView *)sender.view gestureStartTime:(i.startTime + panAnimationDuration)];
+        if(p.x == 0 && p.y == 0){
+            NSLog(@"失敗");
+            [sender.view removeFromSuperview];
+        }else{
+            NSLog(@"成功");
+            MBAnimationView *mb = [[MBAnimationView alloc] init];
+            [mb setAnimationImage:@"pipo-btleffect078.png" :120 :120 :14];
+            mb.frame = CGRectMake(p.x, p.y, 120, 120);
+            mb.animationDuration = 0.5;
+            [self.view addSubview:mb];
+            [mb startAnimating];
+            
+        }
+    }
+}
+
+- (void)createLongPressGestureRecognizers:(UIView *)targetView {
+    UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc]
+                                               initWithTarget:self action:@selector(handleLongPressGesture:)];
+    longPress.allowableMovement = 10.0; //ロングプレス中に動いても許容されるピクセル数を指定
+    longPress.minimumPressDuration = 0.4; //ジェスチャ認識のために押し続ける秒数を指定
+    [targetView addGestureRecognizer:longPress];
+}
+
+- (void)handleLongPressGesture:(UILongPressGestureRecognizer *)sender {
+    UIWindow *window = [[[UIApplication sharedApplication] delegate] window];
+    CGPoint point = [sender locationOfTouch:0 inView:window];
+    //    NSLog(@"Tap Point: %@", NSStringFromCGPoint(point));
+    Icon *i = [iconArray objectAtIndex:sender.view.tag - 1];
+    if ([sender state] == UIGestureRecognizerStateBegan){
+        CGPoint p = [self accuracyOfLongPressGesture:CGPointMake(point.x, point.y) MBAnimation:(MBAnimationView *)sender.view gestureStartTime:(i.startTime + panAnimationDuration)];
+        if(p.x == 0 && p.y == 0){
+            NSLog(@"失敗");
+        }else{
+            NSLog(@"成功");
+            MBAnimationView *mb = [[MBAnimationView alloc] init];
+            [mb setAnimationImage:@"pipo-btleffect078.png" :120 :120 :14];
+            mb.frame = CGRectMake(p.x, p.y, 120, 120);
+            mb.animationDuration = 0.5;
+            [self.view addSubview:mb];
+            [mb startAnimating];
+        }
+        [sender.view removeFromSuperview];
+    }
+}
+
+//シングルタップ開始のタイミングと座標が一致しているかを判定するメソッド。一致していれば対象のアニメーションのorigin.xとorigin.yを返す。一致していなければCGPointZeroを返す。
+-(CGPoint)accuracyOfTapGesture:(CGPoint)point MBAnimation:(MBAnimationView *)mbAnimation gestureStartTime:(NSTimeInterval)gestureStartTime{
+    CGPoint cg = CGPointZero;
+    float  thresholdOfTimeInterval = 0.5; //タップしたタイミングの曖昧さの閾値を設定
+    //設定した閾値から、タップ成功範囲とタイミングを設定
+    if (CGRectContainsPoint(mbAnimation.frame, point)) {
+        cg = CGPointMake(mbAnimation.frame.origin.x, mbAnimation.frame.origin.y);
+    }else{
+        NSLog(@"タップした座標が合っていない");
+        NSLog(@"x:%f y:%f",mbAnimation.frame.origin.x,mbAnimation.frame.origin.y);
+        return cg;
+    }
+    
+    if ((audio.currentTime - gestureStartTime) >= thresholdOfTimeInterval * -1 && (audio.currentTime - gestureStartTime) <= thresholdOfTimeInterval) {
+        NSLog(@"最高得点時からの差:%lf",(audio.currentTime - gestureStartTime));
+    }else{
+        NSLog(@"タイミング合っていない");
+        NSLog(@"最高得点時からの差:%lf",(audio.currentTime - gestureStartTime));
+        cg = CGPointZero;
+    }
+    return cg;
+}
+
+//スワイプ開始のタイミングと座標が一致しているかを判定するメソッド。一致していれば対象のアニメーションのorigin.xとorigin.yを返す。一致していなければCGPointZeroを返す。
+- (CGPoint)accuracyOfPanGesture:(CGPoint)point MBAnimation:(MBAnimationView *)mbAnimation gestureStartTime:(NSTimeInterval)gestureStartTime{
+    CGPoint cg = CGPointZero;
+    float  thresholdOfTimeInterval = 0.5; //タップしたタイミングの曖昧さの閾値を設定
+    //設定した閾値から、タップ成功範囲とタイミングを設定
+    if (CGRectContainsPoint(mbAnimation.frame, point)) {
+        cg = CGPointMake(mbAnimation.frame.origin.x, mbAnimation.frame.origin.y);
+    }else{
+        NSLog(@"タップした座標が合っていない");
+        NSLog(@"x:%f y:%f",mbAnimation.frame.origin.x,mbAnimation.frame.origin.y);
+        return cg;
+    }
+    
+    if ((audio.currentTime - gestureStartTime) >= thresholdOfTimeInterval * -1 && (audio.currentTime - gestureStartTime) <= thresholdOfTimeInterval) {
+        NSLog(@"最高得点時からの差:%lf",(audio.currentTime - gestureStartTime));
+    }else{
+        NSLog(@"タイミング合っていない");
+        NSLog(@"最高得点時からの差:%lf",(audio.currentTime - gestureStartTime));
+        cg = CGPointZero;
+    }
+    return cg;
+}
+
+
+//ロングプレス開始のタイミングと座標が一致しているかを判定するメソッド。一致していれば対象のアニメーションのorigin.xとorigin.yを返す。一致していなければCGPointZeroを返す。
+-(CGPoint)accuracyOfLongPressGesture:(CGPoint)point MBAnimation:(MBAnimationView *)mbAnimation gestureStartTime:(NSTimeInterval)gestureStartTime{
+    CGPoint cg = CGPointZero;
+    float  thresholdOfTimeInterval = 0.5; //タップしたタイミングの曖昧さの閾値を設定
+    //設定した閾値から、タップ成功範囲とタイミングを設定
+    if (CGRectContainsPoint(mbAnimation.frame, point)) {
+        cg = CGPointMake(mbAnimation.frame.origin.x, mbAnimation.frame.origin.y);
+    }else{
+        NSLog(@"タップした座標が合っていない");
+        NSLog(@"x:%f y:%f",mbAnimation.frame.origin.x,mbAnimation.frame.origin.y);
+        return cg;
+    }
+    
+    if ((audio.currentTime - gestureStartTime) >= thresholdOfTimeInterval * -1 && (audio.currentTime - gestureStartTime) <= thresholdOfTimeInterval) {
+        NSLog(@"最高得点時からの差:%lf",(audio.currentTime - gestureStartTime));
+    }else{
+        NSLog(@"タイミング合っていない");
+        NSLog(@"最高得点時からの差:%lf",(audio.currentTime - gestureStartTime));
+        cg = CGPointZero;
+    }
+    
+    return cg;
+}
+
 
 
 

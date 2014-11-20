@@ -11,6 +11,9 @@
 #import "UIView+Origin.h"
 #import "Icon.h"
 #import "MBAnimationView.h"
+#import "TapGesture.h"
+#import "PanGesture.h"
+#import "LongPressGesture.h"
 #import <AVFoundation/AVFoundation.h>
 
 
@@ -32,6 +35,9 @@
     NSMutableArray *exceptionArea;
     int zenkai;
     int iconTagNumber; //アイコン毎にユニークなタグ番号
+    float singleTapAnimationDuration;
+    float panAnimationDuration;
+    float longPressAnimationDuration;
 }
 
 @end
