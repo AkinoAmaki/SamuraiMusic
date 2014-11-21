@@ -62,6 +62,7 @@
     timeSlider.center = CGPointMake([UIScreen mainScreen].bounds.size.width / 2, [UIScreen mainScreen].bounds.size.height - 25);
     [allUtilityView addSubview:timeSlider];
     timeSlider.maximumValue = audio.duration;
+    [timeSlider setThumbImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"bar" ofType:@"png"]] forState:UIControlStateNormal];
     [timeSlider addTarget:self action:@selector(timeSliderChanged:) forControlEvents:UIControlEventValueChanged];
     [timeSlider addTarget:self action:@selector(touchUpInside) forControlEvents:UIControlEventTouchUpInside];
     [timeSlider addTarget:self action:@selector(touchUpOutside) forControlEvents:UIControlEventTouchUpOutside];
@@ -89,6 +90,10 @@
     panAnimationDuration = 0.85;
     longPressAnimationDuration = 1;
 
+    //アイコン設置の例外エリアを管理する配列を初期化
+    exceptionAreaArray = [[NSMutableArray alloc] init];
+    //例外エリアとして、種々のステータスを表示する画面下端60pxを設定する。（配列番号は0番）
+    [self setExceptionArea:CGRectMake(0, [UIScreen mainScreen].bounds.size.height - 60, [UIScreen mainScreen].bounds.size.width, 60) startTime:0 endTime:audio.duration iconTagNumber:0];
 }
 
 - (void)touchUpInside{
@@ -101,10 +106,12 @@
 
 - (void)viewDidAppear:(BOOL)animated{
     //現在の再生時刻を表すラベル(currentTimeLabel)と、残りの再生時間を表すラベル(durationLabel)を設定
-    currentTimeLabel = [[UILabel alloc] initWithFrame:CGRectMake(5,[UIScreen mainScreen].bounds.size.height - 30 - 5, 100, 30)];
-    durationLabel    = [[UILabel alloc] initWithFrame:CGRectMake([UIScreen mainScreen].bounds.size.width - 50 - 5, [UIScreen mainScreen].bounds.size.height - 30 - 5, 100, 30)];
+    currentTimeLabel = [[UILabel alloc] initWithFrame:CGRectMake(30,[UIScreen mainScreen].bounds.size.height - 30 - 2, 100, 30)];
+    durationLabel    = [[UILabel alloc] initWithFrame:CGRectMake([UIScreen mainScreen].bounds.size.width - 50 - 5, [UIScreen mainScreen].bounds.size.height - 30 - 2, 100, 30)];
     currentTimeLabel.textColor = [UIColor whiteColor];
     durationLabel.textColor = [UIColor whiteColor];
+    currentTimeLabel.font = [UIFont systemFontOfSize:10];
+    durationLabel.font = [UIFont systemFontOfSize:10];
     [allUtilityView addSubview:currentTimeLabel];
     [allUtilityView addSubview:durationLabel];
     
@@ -176,7 +183,6 @@
         }
     }
     if((int)audio.currentTime < zenkai){
-        NSLog(@"xを更新");
         [animatingNowIconArray removeAllObjects];
     }
     
@@ -306,6 +312,7 @@
 - (void)panAction : (UIPanGestureRecognizer *)sender {
     if ([sender state] == UIGestureRecognizerStateBegan){
         sender.view.alpha = 0.4f;
+        initPoint = sender.view.center;
     }
     
     // ドラッグで移動した距離を取得する
@@ -330,14 +337,16 @@
     
     if([sender state] == UIGestureRecognizerStateEnded){
         BOOL isExistInExceptionArea = NO; //スワイプの終点がExceptionAreaに入っていたらYES
-        for (int i = 0; i < [exceptionArea count]; i++) {
-            CGRect tempRect = [[exceptionArea objectAtIndex:i] CGRectValue];
-            if (CGRectIntersectsRect (tempRect, sender.view.frame)) isExistInExceptionArea = YES;
-        }
         
+        for (ExceptionArea *ex in exceptionAreaArray){
+            if(![ex isEqual:[NSNull null]] && audio.currentTime >= ex.startTime && audio.currentTime <= ex.endTime && CGRectIntersectsRect (ex.exceptionArea, sender.view.frame)){
+                isExistInExceptionArea = YES;
+            }
+        }
         if (isExistInExceptionArea){
             //スワイプの終点がExceptionAreaに入っていたらスワイプ開始時点にViewを戻す
             sender.view.center = initPoint;
+            NSLog(@"center: x:%f y:%f",sender.view.center.x,sender.view.center.y);
         }else{
             //無事スワイプが完了した場合は、iconArrayで保管されているアイコンのcenter位置を更新する
             for (int i = 0; i < [iconArray count]; i++) {
@@ -347,6 +356,11 @@
                     [iconArray replaceObjectAtIndex:i withObject:icon];
                 }
             }
+            
+            //移動したアイコンの領域に他のアイコンが入らないよう、例外エリアの設定を更新する
+            ExceptionArea *ex = [exceptionAreaArray objectAtIndex:sender.view.tag - 1];
+            ex.exceptionArea = sender.view.frame;
+            [exceptionAreaArray replaceObjectAtIndex:sender.view.tag withObject:ex];
         }
         sender.view.alpha = 1.0f;
     }
@@ -363,10 +377,12 @@
     if([sender state] == UIGestureRecognizerStateEnded){
         sender.view.alpha = 1.0f;
         BOOL isExistInExceptionArea = NO; //スワイプの終点がExceptionAreaに入っていたらYES
-        for (int i = 0; i < [exceptionArea count]; i++) {
-            CGRect tempRect = [[exceptionArea objectAtIndex:i] CGRectValue];
-            if (CGRectIntersectsRect (tempRect, sender.view.frame)) isExistInExceptionArea = YES;
+        for (ExceptionArea *ex in exceptionAreaArray){
+            if(![ex isEqual:[NSNull null]] && audio.currentTime >= ex.startTime && audio.currentTime <= ex.endTime && CGRectIntersectsRect (ex.exceptionArea, sender.view.frame)){
+                isExistInExceptionArea = YES;
+            }
         }
+        
         
         if (isExistInExceptionArea){
             sender.view.center = initPoint; //スワイプの終点がExceptionAreaに入っていたらスワイプ開始時点にViewを戻す
@@ -391,6 +407,11 @@
                 //作成に成功したアイコンをiconArrayに格納する
                 Icon *i1 = [[Icon alloc] initWithData:sender.view.center iconType:1 startTime:audio.currentTime endTime:(audio.currentTime + singleTapGestureDuration) iconTagNumber:sender.view.tag];
                 [iconArray addObject:i1];
+                
+                //作成したアイコンの領域に他のアイコンが入らないよう、例外エリアに設定する
+                [self setExceptionArea:sender.view.frame startTime:audio.currentTime endTime:audio.currentTime + singleTapAnimationDuration iconTagNumber:sender.view.tag];
+                
+                
             }else if (initPoint.x == 160){
                 //スワイプのアイコンが作成された時
                 //新しいコピーを元の位置に作成する
@@ -406,6 +427,9 @@
                 //作成に成功したアイコンをiconArrayに格納する
                 Icon *i2 = [[Icon alloc] initWithData:sender.view.center iconType:2 startTime:audio.currentTime endTime:(audio.currentTime + panGestureDuration) iconTagNumber:sender.view.tag];
                 [iconArray addObject:i2];
+                
+                //作成したアイコンの領域に他のアイコンが入らないよう、例外エリアに設定する
+                [self setExceptionArea:sender.view.frame startTime:audio.currentTime endTime:audio.currentTime + panAnimationDuration iconTagNumber:sender.view.tag];
             }else if (initPoint.x == 260){
                 //ロングプレスのアイコンが作成された時
                 //新しいコピーを元の位置に作成する
@@ -421,6 +445,9 @@
                 //作成に成功したアイコンをiconArrayに格納する
                 Icon *i3 = [[Icon alloc] initWithData:sender.view.center iconType:3 startTime:audio.currentTime endTime:(audio.currentTime + singleTapGestureDuration) iconTagNumber:sender.view.tag];
                 [iconArray addObject:i3];
+                
+                //作成したアイコンの領域に他のアイコンが入らないよう、例外エリアに設定する
+                [self setExceptionArea:sender.view.frame startTime:audio.currentTime endTime:audio.currentTime + longPressAnimationDuration iconTagNumber:sender.view.tag];
             }
             
             //代わりに、単なるドラッグ能力とダブルタップしたら消えるジェスチャを加える。
@@ -429,7 +456,6 @@
             [doubleTapGesture setNumberOfTapsRequired:2];
             [sender.view addGestureRecognizer:doubleTapGesture];
             NSLog(@"%@",iconArray);
-
         }
     }
     // ドラッグで移動した距離を取得する
@@ -452,8 +478,9 @@
     [sender setTranslation:CGPointZero inView:sender.view];
 }
 
--(void)setExceptionArea:(CGRect)rect{
-    [exceptionArea addObject:[NSValue valueWithCGRect:rect]];
+-(void)setExceptionArea:(CGRect)rect startTime:(NSTimeInterval)startTime endTime:(NSTimeInterval)endTime iconTagNumber:(int)tag{
+    ExceptionArea *exception = [[ExceptionArea alloc] initWithData:rect startTime:startTime endTime:endTime iconTagNumber:tag];
+    [exceptionAreaArray addObject:exception];
 }
 
 - (void)doubleTapMethod : (UITapGestureRecognizer *)sender {
@@ -462,6 +489,7 @@
     
     //iconArrayに登録されているアイコンも消去(removeすると配列内のビューの位置番号とtagの番号がずれてしまうので、代わりにnullを詰める)
     [iconArray replaceObjectAtIndex:sender.view.tag - 1 withObject:[NSNull null]];
+    [exceptionAreaArray replaceObjectAtIndex:sender.view.tag withObject:[NSNull null]];
 }
 
 - (void)createTapGestureRecognizers:(UIView *)targetView {

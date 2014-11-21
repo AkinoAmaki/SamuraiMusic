@@ -14,6 +14,7 @@
 #import "TapGesture.h"
 #import "PanGesture.h"
 #import "LongPressGesture.h"
+#import "ExceptionArea.h"
 #import <AVFoundation/AVFoundation.h>
 
 
@@ -32,7 +33,7 @@
     CGPoint initPoint;
     NSMutableArray *iconArray;
     NSMutableArray *animatingNowIconArray;
-    NSMutableArray *exceptionArea;
+    NSMutableArray *exceptionAreaArray;
     int zenkai;
     int iconTagNumber; //アイコン毎にユニークなタグ番号
     float singleTapAnimationDuration;
