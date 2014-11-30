@@ -7,11 +7,13 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "Icon.h"
 
-@interface ViewController : UIViewController{
+@interface ViewController : UIViewController<NSCoding>{
     float singleTapGestureDuration;
     float panGestureDuration;
     float longPressGestureDuration;
+    NSMutableArray *syokiStages;
 
 }
 

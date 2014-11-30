@@ -9,10 +9,32 @@
 #import "StageEditViewController.h"
 
 @implementation StageEditViewController
+@synthesize stages;
+@synthesize stageNumber;
+@synthesize iconArray;
+@synthesize musicPath;
+@synthesize newHumen;
+
+
 
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
+    
+    Icon *icon = [[Icon alloc] init];
+    icon.delegate = self;
+    
+    // ラベルを設定
+    CGRect rect = CGRectMake(0, 0, 320, 50);
+    UILabel *label = [[UILabel alloc]initWithFrame:rect];
+    label.center = CGPointMake(160, 160);
+    label.font = [UIFont fontWithName:@"Arial" size:48];
+    label.textAlignment = UITextAlignmentCenter;
+    [self.view addSubview:label];
+    
+    // 背景色を設定
+    self.view.backgroundColor = [UIColor whiteColor];
+
     
     //シークバー・再生ボタン等のツールビューを取りまとめるビューの初期化
     allUtilityView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, [UIScreen mainScreen].bounds.size.height)];
@@ -40,20 +62,17 @@
     [self setDragCopyAction:panImageView];
     [self setDragCopyAction:longPressImageView];
     
-    
+    kyokumei = [[stages objectAtIndex:stageNumber] objectAtIndex:1];
+    kakutyoushi =  [[stages objectAtIndex:stageNumber] objectAtIndex:2];
     //用意した音楽を再生
-    NSString *path = [[NSBundle mainBundle] pathForResource:@"Won't Go Home Without You Lyrics" ofType:@"mp3"];
-    NSURL *url = [NSURL fileURLWithPath:path];
-    audio = [[AVAudioPlayer alloc] initWithContentsOfURL:url error:nil];
-//    [audio prepareToPlay];
-    audio.volume = 0.2f;
+    [self setAudio:kyokumei kakutyoushi:kakutyoushi volume:0.2f];
     
     //再生・一時停止ボタンを設置
     playButton = [[UIButton alloc] initWithFrame:CGRectMake(0, 0, 30, 30)];
     playButton.center = CGPointMake([UIScreen mainScreen].bounds.size.width / 2, [UIScreen mainScreen].bounds.size.height - 45);
     [allUtilityView addSubview:playButton];
     [playButton setBackgroundImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"start" ofType:@"png"]] forState:UIControlStateNormal];  // 画像をセットする
-    // ボタンが押された時にhogeメソッドを呼び出す
+    // ボタンが押された時に指定したメソッドを呼び出す
     [playButton addTarget:self
                    action:@selector(playAudio:) forControlEvents:UIControlEventTouchUpInside];
     
@@ -74,8 +93,22 @@
                                            repeats:YES];
     [timer fire];
     
-    //設置するアイコンの設定を初期化
-    iconArray = [[NSMutableArray alloc] init];
+    //アイコンの位置を保存するボタンを設置
+    saveButton = [[UIButton alloc] initWithFrame:CGRectMake(0, 0, 60, 30)];
+    saveButton.center = CGPointMake([UIScreen mainScreen].bounds.size.width - 80, [UIScreen mainScreen].bounds.size.height - 45);
+    [allUtilityView addSubview:saveButton];
+    [saveButton setBackgroundImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"saveButton" ofType:@"png"]] forState:UIControlStateNormal];  // 画像をセットする
+    // ボタンが押された時にhogeメソッドを呼び出す
+    [saveButton addTarget:self
+                   action:@selector(saveIcon:) forControlEvents:UIControlEventTouchUpInside];
+
+    
+    //既存譜面の編集の場合、過去に保存したアイコンの配列を初期化
+    if(stageNumber != [stages count]){
+        NSData *data = [[stages objectAtIndex:stageNumber] objectAtIndex:3];
+        iconArray = [icon deserialize:data];
+        NSLog(@"%@",iconArray);
+    }
     
     //タグナンバーを初期化
     iconTagNumber = 1;
@@ -117,6 +150,23 @@
     
     //ラベルの内容をアップデート
     [self updateLabel];
+    
+}
+
+- (void)setAudio:(NSString *)musicName kakutyoushi:(NSString *)extension volume:(float)volume{
+    NSLog(@"musicPath:%@",musicPath);
+    NSURL *url = [NSURL fileURLWithPath:musicPath];
+    NSError *error = nil;
+    
+    audio = [[AVAudioPlayer alloc] initWithContentsOfURL:url error:&error];
+    //    [audio prepareToPlay];
+    audio.volume = volume;
+    
+    // エラーが起きたとき
+    if ( error != nil )
+    {
+        NSLog(@"Error %@", [error localizedDescription]);
+    }
 }
 
 //曲の再生・一時停止を行う
@@ -131,6 +181,55 @@
         [playButton setBackgroundImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"start" ofType:@"png"]] forState:UIControlStateNormal];  // 画像をセットする
     }
     
+}
+
+- (IBAction)saveIcon:(id)sender{
+    //ID入力方式による対戦相手の指定の実装
+    humenNameAlertView = [[UIAlertView alloc] initWithTitle:@"譜面の保存" message:@"保存する譜面名を入力してください" delegate:self cancelButtonTitle:@"キャンセル" otherButtonTitles:@"譜面を保存する", nil];
+    humenNameAlertView.alertViewStyle = UIAlertViewStylePlainTextInput;
+    humenNameAlertView.frame = CGRectMake(0, 50, 300, 200);
+    humenNameTextField = [[UITextField alloc] initWithFrame:CGRectMake(12, 45, 260, 25)];
+    humenNameTextField.placeholder = @"譜面名を入力";
+    humenNameTextField.delegate = self;
+    [humenNameTextField setKeyboardType:UIKeyboardTypeNumbersAndPunctuation];
+    [humenNameTextField reloadInputViews];
+    humenNameTextField = [humenNameAlertView textFieldAtIndex:0];
+    [humenNameAlertView show];
+}
+
+- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
+    //譜面名が入力された際に飛んでくるメソッド。譜面名と譜面本体を保存する。
+    switch (buttonIndex) {
+        case 0:
+            //保存処理をキャンセルした時。なにもしない。
+            break;
+        case 1:
+            //実際に保存を行ったとき
+        {
+            //独自クラス(Iconクラス)はそのままNSUserDefaultに保存するために、NSData型に変換する
+            //NSData型への変換は仕様上Iconクラスでしかできないので、とりあえず適用にIconクラスをインスタンス化してメソッド適用
+            Icon *icon = [[Icon alloc] init];
+            NSData *data = [icon serialize:iconArray];
+            
+            //譜面名、曲名、曲の拡張子、譜面をひとつの配列にまとめる
+            NSMutableArray *tempArray = [[NSMutableArray alloc] initWithObjects:humenNameTextField.text, kyokumei, kakutyoushi, data, musicPath, nil];
+            
+//            if (newHumen) {
+//                //譜面を新規追加する
+//                [stages addObject:tempArray];
+//                NSLog(@"add");
+//            }else{
+                //編集前の譜面と入れ替える
+                [stages replaceObjectAtIndex:stageNumber withObject:tempArray];
+                NSLog(@"replace");
+//            }
+            [[NSUserDefaults standardUserDefaults] setObject:stages forKey:@"stageArray"];
+            [[NSUserDefaults standardUserDefaults] synchronize];
+            NSLog(@"完成");
+        }
+        default:
+            break;
+    }
 }
 
 //ラベルの内容をアップデートする
@@ -346,7 +445,7 @@
         if (isExistInExceptionArea){
             //スワイプの終点がExceptionAreaに入っていたらスワイプ開始時点にViewを戻す
             sender.view.center = initPoint;
-            NSLog(@"center: x:%f y:%f",sender.view.center.x,sender.view.center.y);
+//            NSLog(@"center: x:%f y:%f",sender.view.center.x,sender.view.center.y);
         }else{
             //無事スワイプが完了した場合は、iconArrayで保管されているアイコンのcenter位置を更新する
             for (int i = 0; i < [iconArray count]; i++) {
@@ -455,7 +554,6 @@
             UITapGestureRecognizer *doubleTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(doubleTapMethod:)]; //ダブルタップに反応させる
             [doubleTapGesture setNumberOfTapsRequired:2];
             [sender.view addGestureRecognizer:doubleTapGesture];
-            NSLog(@"%@",iconArray);
         }
     }
     // ドラッグで移動した距離を取得する
@@ -647,8 +745,5 @@
     
     return cg;
 }
-
-
-
 
 @end

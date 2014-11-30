@@ -17,8 +17,53 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
+    
+//    // アプリケーションのバンドル識別子を取得します。
+//    NSString* domain = [[NSBundle mainBundle] bundleIdentifier];
+//
+//    // バンドル識別子を使って、アプリに関係する設定を一括消去します。
+//    [[NSUserDefaults standardUserDefaults] removePersistentDomainForName:domain];
+//    
+//    
+//    //Documantsフォルダの音楽ファイルを全て削除する
+//    FileHelper *file = [[FileHelper alloc] init];
+//    NSArray *stringArray = [file fileNamesAtDirectoryPath:[NSHomeDirectory() stringByAppendingPathComponent:@"Documents"] extension:@"m4a"];
+//    
+//    for (NSString *st in stringArray) {
+//        NSString *path = [[NSHomeDirectory() stringByAppendingPathComponent:@"Documents"] stringByAppendingPathComponent:st];
+//        NSLog(@"%@",path);
+//        [self removeFileByPath:path];
+//    }
+
+    
+    // ナビゲーションコントローラにベースとなるコントローラをセット
+    editStageSelect = [[EditStageSelect alloc] init];
+    naviController = [[UINavigationController alloc]
+                      initWithRootViewController:editStageSelect];
+    
+    // ナビゲーションコントローラのビューをウィンドウに貼付ける
+    [self.window addSubview:naviController.view];
+    
+    [self.window makeKeyAndVisible];
+    
     return YES;
 }
+
+-(void)removeFileByPath:(NSString*)path{
+    NSFileManager *fm = [NSFileManager defaultManager];
+    if (![fm fileExistsAtPath:path]) {
+        NSLog(@"no file");
+        return;
+    }
+    NSError *error=nil;
+    [fm removeItemAtPath:path error:&error];
+    if (error!=nil) {//failed
+        NSLog(@"failed to remove %@",[error localizedDescription]);
+    }else{
+        NSLog(@"Successfully removed:%@",path);
+    }
+}
+
 
 - (void)applicationWillResignActive:(UIApplication *)application {
     // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
