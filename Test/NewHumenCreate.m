@@ -199,7 +199,7 @@
         
         //音楽データのエクスポート処理が終わるまで待機
         finished = NO;
-        [SVProgressHUD showWithMaskType:SVProgressHUDMaskTypeGradient];
+        [SVProgressHUD showWithStatus:@"曲を変換中..." maskType:SVProgressHUDMaskTypeGradient];
         while(!finished) {
             [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.5]];
         }
@@ -209,8 +209,7 @@
         NSMutableArray *nullArray = [[NSMutableArray alloc] init];
         Icon *icon = [[Icon alloc] init];
         NSData *data = [icon serialize:nullArray];
-        NSMutableArray *tempArray = [[NSMutableArray alloc] initWithObjects:@"humenxxx", kyokumei, kakutyoushi, data, filePath, nil];
-        NSLog(@"FILEPATH:%@",filePath);
+        NSMutableArray *tempArray = [[NSMutableArray alloc] initWithObjects:@"humenxxx", kyokumei, kakutyoushi, data, nil];
         [stages addObject:tempArray];
         [[NSUserDefaults standardUserDefaults] setObject:stages forKey:@"stageArray"];
         [[NSUserDefaults standardUserDefaults] synchronize];
@@ -220,7 +219,6 @@
         stageEditViewController.stageNumber = (int)[stages count] - 1;
         stageEditViewController.mountOfStages = (int)[stages count];
         stageEditViewController.stages = [[NSMutableArray alloc] initWithArray:self.stages];
-        stageEditViewController.musicPath = filePath;
         stageEditViewController.newHumen = YES;
         NSLog(@"ステージナンバー:%d",stageEditViewController.stageNumber);
         NSLog(@"ステージ数:%d",stageEditViewController.mountOfStages);

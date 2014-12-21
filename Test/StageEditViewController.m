@@ -154,18 +154,35 @@
 }
 
 - (void)setAudio:(NSString *)musicName kakutyoushi:(NSString *)extension volume:(float)volume{
-    NSLog(@"musicPath:%@",musicPath);
-    NSURL *url = [NSURL fileURLWithPath:musicPath];
-    NSError *error = nil;
-    
-    audio = [[AVAudioPlayer alloc] initWithContentsOfURL:url error:&error];
-    //    [audio prepareToPlay];
-    audio.volume = volume;
-    
-    // エラーが起きたとき
-    if ( error != nil )
-    {
-        NSLog(@"Error %@", [error localizedDescription]);
+    //再生対象の音楽ファイルのパスを指定する
+        //Documentsファイルを指定
+        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+        NSString *DocumentsDirPath = [paths objectAtIndex:0];
+        //再生曲名及び拡張子を指定
+            //現状、拡張子は全てm4aに強制変換しているので、m4aに変更する
+            extension = @"m4a";
+        NSString *kyokumeiAndKakutyoushi = [musicName stringByAppendingPathExtension:extension];
+        //上の２つを結合
+        NSString *path = [DocumentsDirPath stringByAppendingPathComponent:kyokumeiAndKakutyoushi];
+        //musicPathに指定する
+        musicPath = path;
+    if ([[NSFileManager defaultManager] fileExistsAtPath:musicPath]) {
+        NSURL *url = [NSURL fileURLWithPath:musicPath];
+        NSError *error = nil;
+        
+        audio = [[AVAudioPlayer alloc] initWithContentsOfURL:url error:&error];
+        //    [audio prepareToPlay];
+        audio.volume = volume;
+        
+        // エラーが起きたとき
+        if ( error != nil )
+        {
+            NSLog(@"Error %@", [error localizedDescription]);
+        }
+
+    }else{
+        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"エラー" message:@"再生する曲が見つかりませんでした。この譜面を削除してください。" delegate:self cancelButtonTitle:nil otherButtonTitles:@"ok", nil];
+        [alert show];
     }
 }
 

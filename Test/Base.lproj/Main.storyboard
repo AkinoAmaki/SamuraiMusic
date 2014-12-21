@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="6250" systemVersion="13F34" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" initialViewController="z6p-qX-xqd">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="6254" systemVersion="13F34" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" initialViewController="z6p-qX-xqd">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6244"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6247"/>
     </dependencies>
     <scenes>
         <!--View Controller-->
@@ -31,7 +31,7 @@
                                     <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                                 </state>
                                 <connections>
-                                    <segue destination="Jfn-XK-V04" kind="modal" id="cCB-hk-K2M"/>
+                                    <segue destination="9Dq-Xe-YUz" kind="modal" id="cCB-hk-K2M"/>
                                 </connections>
                             </button>
                         </subviews>
@@ -68,6 +68,7 @@
         <!--Edit Stage Select-->
         <scene sceneID="keT-HP-z9f">
             <objects>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="PYL-cz-mcL" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <tableViewController id="Jfn-XK-V04" customClass="EditStageSelect" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="aFD-nL-8pc">
                         <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
@@ -86,10 +87,16 @@
                             <outlet property="delegate" destination="Jfn-XK-V04" id="Be1-J5-Npf"/>
                         </connections>
                     </tableView>
+                    <navigationItem key="navigationItem" id="zXy-kD-WXz">
+                        <barButtonItem key="leftBarButtonItem" title="Item" id="UDj-YY-6Ae">
+                            <connections>
+                                <segue destination="z6p-qX-xqd" kind="modal" id="Wqr-yy-f6s"/>
+                            </connections>
+                        </barButtonItem>
+                    </navigationItem>
                 </tableViewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="PYL-cz-mcL" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="85" y="755"/>
+            <point key="canvasLocation" x="632" y="755"/>
         </scene>
         <!--Stage Edit View Controller-->
         <scene sceneID="rmh-BH-jGt">
@@ -107,7 +114,25 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="XCV-9S-XaT" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="469" y="755"/>
+            <point key="canvasLocation" x="1001" y="755"/>
+        </scene>
+        <!--Navigation Controller-->
+        <scene sceneID="53j-y5-9hw">
+            <objects>
+                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="9Dq-Xe-YUz" sceneMemberID="viewController">
+                    <toolbarItems/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="kMZ-PH-BDV">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <nil name="viewControllers"/>
+                    <connections>
+                        <segue destination="Jfn-XK-V04" kind="relationship" relationship="rootViewController" id="HVf-qs-IxI"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="lb7-HK-6uT" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="109" y="1087"/>
         </scene>
     </scenes>
     <simulatedMetricsContainer key="defaultSimulatedMetrics">

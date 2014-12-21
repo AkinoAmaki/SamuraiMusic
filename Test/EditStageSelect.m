@@ -38,6 +38,15 @@
     
     
     stages = [[NSUserDefaults standardUserDefaults] objectForKey:@"stageArray"];
+
+    UIBarButtonItem *btn = [[UIBarButtonItem alloc]
+                             initWithBarButtonSystemItem:UIBarButtonSystemItemReply
+                             target:self action:@selector(returnToMainView)];
+    self.navigationItem.leftBarButtonItem = btn;
+}
+
+- (void)returnToMainView{
+    [self dismissViewControllerAnimated:YES completion:nil];
 }
 
 - (void)didReceiveMemoryWarning
@@ -127,12 +136,10 @@
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
     if(indexPath.row < [stages count]){
         //既存譜面の編集の場合
-        NSLog(@"%@",[stages objectAtIndex:(int)indexPath.row]);
         stageEditViewController = [[StageEditViewController alloc] init];
         stageEditViewController.stageNumber = (int)indexPath.row;
         stageEditViewController.mountOfStages = (int)[stages count];
         stageEditViewController.stages = [[NSMutableArray alloc] initWithArray:self.stages];
-        stageEditViewController.musicPath = [[stages objectAtIndex:(int)indexPath.row] objectAtIndex:4];
         stageEditViewController.newHumen = NO;
         NSLog(@"ステージナンバー:%d",stageEditViewController.stageNumber);
         NSLog(@"ステージ数:%d",stageEditViewController.mountOfStages);
