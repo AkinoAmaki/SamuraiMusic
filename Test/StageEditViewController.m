@@ -14,6 +14,7 @@
 @synthesize iconArray;
 @synthesize musicPath;
 @synthesize newHumen;
+@synthesize exceptionAreaArray;
 
 
 
@@ -29,7 +30,7 @@
     UILabel *label = [[UILabel alloc]initWithFrame:rect];
     label.center = CGPointMake(160, 160);
     label.font = [UIFont fontWithName:@"Arial" size:48];
-    label.textAlignment = UITextAlignmentCenter;
+    label.textAlignment = NSTextAlignmentCenter;
     [self.view addSubview:label];
     
     // 背景色を設定
@@ -98,20 +99,34 @@
     saveButton.center = CGPointMake([UIScreen mainScreen].bounds.size.width - 80, [UIScreen mainScreen].bounds.size.height - 45);
     [allUtilityView addSubview:saveButton];
     [saveButton setBackgroundImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"saveButton" ofType:@"png"]] forState:UIControlStateNormal];  // 画像をセットする
-    // ボタンが押された時にhogeメソッドを呼び出す
+    // ボタンが押された時にsaveIconメソッドを呼び出す
     [saveButton addTarget:self
                    action:@selector(saveIcon:) forControlEvents:UIControlEventTouchUpInside];
-
     
-    //既存譜面の編集の場合、過去に保存したアイコンの配列を初期化
-    if(stageNumber != [stages count]){
-        NSData *data = [[stages objectAtIndex:stageNumber] objectAtIndex:3];
-        iconArray = [icon deserialize:data];
-        NSLog(@"%@",iconArray);
+    if(newHumen){
+        ExceptionArea *exception = [[ExceptionArea alloc] initWithData:CGRectMake(0, [UIScreen mainScreen].bounds.size.height - 60, [UIScreen mainScreen].bounds.size.width, 60) startTime:0 endTime:3600 iconTagNumber:0];
+        
+        NSMutableArray *dataArray = [[NSMutableArray alloc] init];
+        [dataArray addObject:exception];
+        
+        NSData *data2 = [Icon serialize:dataArray];
+        NSMutableArray *tmp = [stages objectAtIndex:stageNumber];
+        [tmp replaceObjectAtIndex:4 withObject:data2];
+        [stages replaceObjectAtIndex:stageNumber withObject:tmp];
+        [[NSUserDefaults standardUserDefaults] setObject:stages forKey:@"stageArray"];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+        NSArray *arr = [[NSUserDefaults standardUserDefaults] arrayForKey:@"stageArray"];
+        stages = [[NSMutableArray alloc] initWithArray:arr];
     }
     
-    //タグナンバーを初期化
-    iconTagNumber = 1;
+    //過去に保存したアイコンの配列を読み込む
+    NSData *data = [[stages objectAtIndex:stageNumber] objectAtIndex:3];
+    NSData *exceptionAreaData = [[stages objectAtIndex:stageNumber] objectAtIndex:4];
+    iconArray = [Icon deserialize:data];
+    exceptionAreaArray = [Icon deserialize:exceptionAreaData];
+    
+    //タグナンバーを初期化(既に発番済みのタグナンバーはiconArrayの要素数と一致するため、その次の番号から発番）
+    iconTagNumber = [iconArray count] + 1;
     
     //タイムスライダーの値を変更する前の、音楽のcurrentTime
     zenkai = 0;
@@ -122,11 +137,6 @@
     singleTapAnimationDuration = 1;
     panAnimationDuration = 0.85;
     longPressAnimationDuration = 1;
-
-    //アイコン設置の例外エリアを管理する配列を初期化
-    exceptionAreaArray = [[NSMutableArray alloc] init];
-    //例外エリアとして、種々のステータスを表示する画面下端60pxを設定する。（配列番号は0番）
-    [self setExceptionArea:CGRectMake(0, [UIScreen mainScreen].bounds.size.height - 60, [UIScreen mainScreen].bounds.size.width, 60) startTime:0 endTime:audio.duration iconTagNumber:0];
 }
 
 - (void)touchUpInside{
@@ -150,7 +160,6 @@
     
     //ラベルの内容をアップデート
     [self updateLabel];
-    
 }
 
 - (void)setAudio:(NSString *)musicName kakutyoushi:(NSString *)extension volume:(float)volume{
@@ -183,6 +192,7 @@
     }else{
         UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"エラー" message:@"再生する曲が見つかりませんでした。この譜面を削除してください。" delegate:self cancelButtonTitle:nil otherButtonTitles:@"ok", nil];
         [alert show];
+        [self.presentingViewController.presentingViewController dismissViewControllerAnimated:NO completion:nil];
     }
 }
 
@@ -207,6 +217,7 @@
     humenNameAlertView.frame = CGRectMake(0, 50, 300, 200);
     humenNameTextField = [[UITextField alloc] initWithFrame:CGRectMake(12, 45, 260, 25)];
     humenNameTextField.placeholder = @"譜面名を入力";
+    humenNameTextField.text = [NSString stringWithFormat:@"%@",[stages objectAtIndex:0]];
     humenNameTextField.delegate = self;
     [humenNameTextField setKeyboardType:UIKeyboardTypeNumbersAndPunctuation];
     [humenNameTextField reloadInputViews];
@@ -224,25 +235,21 @@
             //実際に保存を行ったとき
         {
             //独自クラス(Iconクラス)はそのままNSUserDefaultに保存するために、NSData型に変換する
-            //NSData型への変換は仕様上Iconクラスでしかできないので、とりあえず適用にIconクラスをインスタンス化してメソッド適用
-            Icon *icon = [[Icon alloc] init];
-            NSData *data = [icon serialize:iconArray];
+            //NSData型への変換は仕様上Iconクラスでしかできないので、とりあえず適用にIconクラスのメソッド適用
+            NSData *data = [Icon serialize:iconArray];
+            NSData *exceptionAreaData = [Icon serialize:exceptionAreaArray];
             
             //譜面名、曲名、曲の拡張子、譜面をひとつの配列にまとめる
-            NSMutableArray *tempArray = [[NSMutableArray alloc] initWithObjects:humenNameTextField.text, kyokumei, kakutyoushi, data, musicPath, nil];
-            
-//            if (newHumen) {
-//                //譜面を新規追加する
-//                [stages addObject:tempArray];
-//                NSLog(@"add");
-//            }else{
-                //編集前の譜面と入れ替える
-                [stages replaceObjectAtIndex:stageNumber withObject:tempArray];
-                NSLog(@"replace");
-//            }
+            NSMutableArray *tempArray = [[NSMutableArray alloc] initWithObjects:humenNameTextField.text, kyokumei, kakutyoushi, data, exceptionAreaData, nil];
+
+            //編集前の譜面と入れ替える
+            [stages replaceObjectAtIndex:stageNumber withObject:tempArray];
+            NSLog(@"replace");
             [[NSUserDefaults standardUserDefaults] setObject:stages forKey:@"stageArray"];
             [[NSUserDefaults standardUserDefaults] synchronize];
             NSLog(@"完成");
+            
+            [self.presentingViewController.presentingViewController dismissViewControllerAnimated:NO completion:nil];
         }
         default:
             break;
@@ -454,15 +461,17 @@
     if([sender state] == UIGestureRecognizerStateEnded){
         BOOL isExistInExceptionArea = NO; //スワイプの終点がExceptionAreaに入っていたらYES
         
+        int exceptionNum = 0; //sender.view.tag番目の例外エリアは、動かしているアイコンそのもののエリアであるため、例外判定から外す。そのために、exceptionNum = sender.view.tagとなる時のみ例外判定を行わない。
         for (ExceptionArea *ex in exceptionAreaArray){
-            if(![ex isEqual:[NSNull null]] && audio.currentTime >= ex.startTime && audio.currentTime <= ex.endTime && CGRectIntersectsRect (ex.exceptionArea, sender.view.frame)){
-                isExistInExceptionArea = YES;
+            if (sender.view.tag != exceptionNum++) {
+                if(![ex isEqual:[NSNull null]] && audio.currentTime >= ex.startTime && audio.currentTime <= ex.endTime && CGRectIntersectsRect (ex.exceptionArea, sender.view.frame)){
+                    isExistInExceptionArea = YES;
+                }
             }
         }
         if (isExistInExceptionArea){
             //スワイプの終点がExceptionAreaに入っていたらスワイプ開始時点にViewを戻す
             sender.view.center = initPoint;
-//            NSLog(@"center: x:%f y:%f",sender.view.center.x,sender.view.center.y);
         }else{
             //無事スワイプが完了した場合は、iconArrayで保管されているアイコンのcenter位置を更新する
             for (int i = 0; i < [iconArray count]; i++) {
@@ -473,8 +482,9 @@
                 }
             }
             
+            
             //移動したアイコンの領域に他のアイコンが入らないよう、例外エリアの設定を更新する
-            ExceptionArea *ex = [exceptionAreaArray objectAtIndex:sender.view.tag - 1];
+            ExceptionArea *ex = [exceptionAreaArray objectAtIndex:sender.view.tag];
             ex.exceptionArea = sender.view.frame;
             [exceptionAreaArray replaceObjectAtIndex:sender.view.tag withObject:ex];
         }
@@ -493,21 +503,55 @@
     if([sender state] == UIGestureRecognizerStateEnded){
         sender.view.alpha = 1.0f;
         BOOL isExistInExceptionArea = NO; //スワイプの終点がExceptionAreaに入っていたらYES
+        
+        //既にアイコンが3つ表示されていたら、アイコンを追加できないようにする
+        BOOL alreadyExist3Icon = NO;
+        int  num = 0;
+        for (int i = 0; i < [iconArray count] ; i++) {
+            //既にアイコンが3つ表示されているかをチェック
+            Icon *ic = iconArray[i];
+            if(![iconArray[i] isKindOfClass:[NSNull class]]){
+                if(audio.currentTime >= ic.startTime && audio.currentTime <= ic.endTime) num++;
+            }
+        }
+        if (num == 3) alreadyExist3Icon = YES;
+        
+        //既にアイコンが999個生成されていたら、アイコンを追加できないようにする
+        BOOL alreadyExist999Icon = NO;
+        int  num2 = 0;
+        for (int i = 0; i < [iconArray count] ; i++) {
+            //既にアイコンが3つ表示されているかをチェック
+            if(![iconArray[i] isKindOfClass:[NSNull class]]) num2++;
+        }
+        if (num2 == 999) alreadyExist999Icon = YES;
+        
+        
+        
         for (ExceptionArea *ex in exceptionAreaArray){
-            if(![ex isEqual:[NSNull null]] && audio.currentTime >= ex.startTime && audio.currentTime <= ex.endTime && CGRectIntersectsRect (ex.exceptionArea, sender.view.frame)){
+            if((![ex isEqual:[NSNull null]] && audio.currentTime >= ex.startTime && audio.currentTime <= ex.endTime && CGRectIntersectsRect (ex.exceptionArea, sender.view.frame)) || alreadyExist3Icon || alreadyExist999Icon){
                 isExistInExceptionArea = YES;
             }
         }
         
         
+        
         if (isExistInExceptionArea){
             sender.view.center = initPoint; //スワイプの終点がExceptionAreaに入っていたらスワイプ開始時点にViewを戻す
+            if (alreadyExist3Icon) {
+                UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"オーバー" message:@"一度に置けるアイコンの数は３つまでです。" delegate:self cancelButtonTitle:nil otherButtonTitles:@"OK", nil];
+                [alert show];
+            }
+            if (alreadyExist999Icon) {
+                UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"オーバー" message:@"合計で置けるアイコンの数は999個までです。" delegate:self cancelButtonTitle:nil otherButtonTitles:@"OK", nil];
+                [alert show];
+            }
+
         }else{
             //アイコン作成に成功した時、アイコンを指定の位置に置き、そのコピーを元の位置に作成し、アイコンからはコピー能力を消し、代わりにダブルタップしたら消えるようにする。
             
             //アイコンにタグナンバーを与える
             sender.view.tag = iconTagNumber++;
-            
+            NSLog(@"sender.view.tag in panActionWithCopy:%d", sender.view.tag);
             //まず、作成に成功したアイコンの所属をallUtilityView(作成用の元アイコン)からallIconView(作成に成功したアイコン)に変更する。
             if(initPoint.x == 60){
                 //シングルタップのアイコンが作成された時
@@ -602,8 +646,9 @@
     //ビューを消去
     [sender.view removeFromSuperview];
     
-    //iconArrayに登録されているアイコンも消去(removeすると配列内のビューの位置番号とtagの番号がずれてしまうので、代わりにnullを詰める)
+    //iconArrayに登録されているアイコンを消去(removeすると配列内のビューの位置番号とtagの番号がずれてしまうので、代わりにnullを詰める)
     [iconArray replaceObjectAtIndex:sender.view.tag - 1 withObject:[NSNull null]];
+    //exceotionAreaArrayに登録されている配列要素も消去（exceotionAreaArrayの0番目には、常に画面下端から60pxの例外領域が登録されているため、iconArrayとは要素が1つずつずれた配列になることに注意！）
     [exceptionAreaArray replaceObjectAtIndex:sender.view.tag withObject:[NSNull null]];
 }
 
@@ -673,7 +718,6 @@
 - (void)handleLongPressGesture:(UILongPressGestureRecognizer *)sender {
     UIWindow *window = [[[UIApplication sharedApplication] delegate] window];
     CGPoint point = [sender locationOfTouch:0 inView:window];
-    //    NSLog(@"Tap Point: %@", NSStringFromCGPoint(point));
     Icon *i = [iconArray objectAtIndex:sender.view.tag - 1];
     if ([sender state] == UIGestureRecognizerStateBegan){
         CGPoint p = [self accuracyOfLongPressGesture:CGPointMake(point.x, point.y) MBAnimation:(MBAnimationView *)sender.view gestureStartTime:(i.startTime + panAnimationDuration)];
@@ -694,6 +738,9 @@
 
 //シングルタップ開始のタイミングと座標が一致しているかを判定するメソッド。一致していれば対象のアニメーションのorigin.xとorigin.yを返す。一致していなければCGPointZeroを返す。
 -(CGPoint)accuracyOfTapGesture:(CGPoint)point MBAnimation:(MBAnimationView *)mbAnimation gestureStartTime:(NSTimeInterval)gestureStartTime{
+    //アニメーションをストップする
+    [mbAnimation stopAnimating];
+    
     CGPoint cg = CGPointZero;
     float  thresholdOfTimeInterval = 0.5; //タップしたタイミングの曖昧さの閾値を設定
     //設定した閾値から、タップ成功範囲とタイミングを設定
@@ -717,6 +764,9 @@
 
 //スワイプ開始のタイミングと座標が一致しているかを判定するメソッド。一致していれば対象のアニメーションのorigin.xとorigin.yを返す。一致していなければCGPointZeroを返す。
 - (CGPoint)accuracyOfPanGesture:(CGPoint)point MBAnimation:(MBAnimationView *)mbAnimation gestureStartTime:(NSTimeInterval)gestureStartTime{
+    //アニメーションをストップする
+    [mbAnimation stopAnimating];
+    
     CGPoint cg = CGPointZero;
     float  thresholdOfTimeInterval = 0.5; //タップしたタイミングの曖昧さの閾値を設定
     //設定した閾値から、タップ成功範囲とタイミングを設定
@@ -741,6 +791,9 @@
 
 //ロングプレス開始のタイミングと座標が一致しているかを判定するメソッド。一致していれば対象のアニメーションのorigin.xとorigin.yを返す。一致していなければCGPointZeroを返す。
 -(CGPoint)accuracyOfLongPressGesture:(CGPoint)point MBAnimation:(MBAnimationView *)mbAnimation gestureStartTime:(NSTimeInterval)gestureStartTime{
+    //アニメーションをストップする
+    [mbAnimation stopAnimating];
+    
     CGPoint cg = CGPointZero;
     float  thresholdOfTimeInterval = 0.5; //タップしたタイミングの曖昧さの閾値を設定
     //設定した閾値から、タップ成功範囲とタイミングを設定

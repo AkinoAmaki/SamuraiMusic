@@ -207,9 +207,16 @@
         [SVProgressHUD dismiss];
         //新規作成したステージをstagesに格納
         NSMutableArray *nullArray = [[NSMutableArray alloc] init];
-        Icon *icon = [[Icon alloc] init];
-        NSData *data = [icon serialize:nullArray];
-        NSMutableArray *tempArray = [[NSMutableArray alloc] initWithObjects:@"humenxxx", kyokumei, kakutyoushi, data, nil];
+        NSData *data = [Icon serialize:nullArray];
+        
+//        ExceptionArea *exception = [[ExceptionArea alloc] initWithData:CGRectMake(0, [UIScreen mainScreen].bounds.size.height - 60, [UIScreen mainScreen].bounds.size.width, 60) startTime:0 endTime:3600 iconTagNumber:1];
+//        NSMutableArray *dataArray = [[NSMutableArray alloc] initWithObjects:exception, nil];
+//        NSData *data2 = [icon serialize:dataArray];
+//        
+//        CGRect rec = exception.exceptionArea;
+//        NSLog(@"x1:%f y1:%f x2:%f y2:%f",rec.origin.x,rec.origin.y,rec.size.width,rec.size.height);
+        
+        NSMutableArray *tempArray = [[NSMutableArray alloc] initWithObjects:@"humenxxx", kyokumei, kakutyoushi, data, data, nil];
         [stages addObject:tempArray];
         [[NSUserDefaults standardUserDefaults] setObject:stages forKey:@"stageArray"];
         [[NSUserDefaults standardUserDefaults] synchronize];

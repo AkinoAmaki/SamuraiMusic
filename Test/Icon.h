@@ -13,8 +13,8 @@
 
 // デリゲートメソッドを宣言
 // （宣言だけしておいて，実装はデリゲート先でしてもらう）
-- (NSData *)serialize:(NSMutableArray *)iconArray;
-- (NSMutableArray *)deserialize:(NSData *)data;
++ (NSData *)serialize:(NSMutableArray *)iconArray;
++ (NSMutableArray *)deserialize:(NSData *)data;
 
 @end
 
@@ -25,14 +25,13 @@
 @property NSTimeInterval startTime; //アニメーション開始時間
 @property NSTimeInterval endTime;   //アニメーション終了時間
 @property int iconTagNumber;
-@property (nonatomic, retain)NSMutableArray *deserializedIconArray;
 
 -(id)initWithData:(CGPoint)center iconType:(int)iconType startTime:(NSTimeInterval)startTime endTime:(NSTimeInterval)endTime iconTagNumber:(int)iconTagNumber;
 
 // デリゲート先で参照できるようにするためプロパティを定義しておく
 @property (nonatomic, assign) id<IconDelegate> delegate;
 
-- (NSData *)serialize:(NSMutableArray *)iconArray;
-- (NSMutableArray *)deserialize:(NSData *)data;
++ (NSData *)serialize:(NSMutableArray *)iconArray;
++ (NSMutableArray *)deserialize:(NSData *)data;
 
 @end

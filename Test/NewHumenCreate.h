@@ -14,7 +14,7 @@
 #import "SVProgressHUD.h"
 
 
-@interface NewHumenCreate : UITableViewController<UITableViewDataSource,UITableViewDelegate>{
+@interface NewHumenCreate : UITableViewController<UITableViewDataSource,UITableViewDelegate,NSCoding>{
     NSMutableArray* sectionPlayList;
     NSMutableArray* sectionSongs;
     NSMutableDictionary* playListSongs;

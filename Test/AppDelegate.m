@@ -13,6 +13,7 @@
 @end
 
 @implementation AppDelegate
+@synthesize font;
 
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
@@ -34,7 +35,6 @@
 //        NSLog(@"%@",path);
 //        [self removeFileByPath:path];
 //    }
-
     
     // ナビゲーションコントローラにベースとなるコントローラをセット
     editStageSelect = [[EditStageSelect alloc] init];
@@ -43,8 +43,10 @@
     
     // ナビゲーションコントローラのビューをウィンドウに貼付ける
     [self.window addSubview:naviController.view];
-    
     [self.window makeKeyAndVisible];
+    
+    //統一して使用するフォントを初期設定
+    font = [UIFont fontWithName:@"Tanuki-Permanent-Marker" size:[UIFont systemFontSize]];
     
     return YES;
 }
@@ -168,5 +170,6 @@
         }
     }
 }
+
 
 @end

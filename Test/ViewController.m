@@ -33,18 +33,19 @@
         NSMutableArray *nullArray = [[NSMutableArray alloc] init];
         
         //NSData型への変換は仕様上Iconクラスでしかできないので、とりあえず適用にIconクラスをインスタンス化してメソッド適用
-        Icon *icon = [[Icon alloc] init];
-        NSData *data = [icon serialize:nullArray];
+        NSData *data = [Icon serialize:nullArray];
         NSArray *syokiArray = [[NSArray alloc] initWithObjects:@"humen1",@"Won't Go Home Without You Lyrics",@"mp3",data, nil];
         syokiStages = [[NSMutableArray alloc] initWithObjects:syokiArray, nil];
         [[NSUserDefaults standardUserDefaults] setObject:syokiStages forKey:@"stageArray"];
         [[NSUserDefaults standardUserDefaults] setInteger:1 forKey:@"first"];
         [[NSUserDefaults standardUserDefaults] synchronize];
     }
+    
+    [self authenticateLocalPlayer];
 }
 
 - (void)viewDidAppear:(BOOL)animated{
-    
+
 }
 
 - (void)backScreenTest{
@@ -84,6 +85,25 @@
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
+}
+
+/**
+ * GameCenterにログインしているか確認処理
+ * ログインしていなければログイン画面を表示
+ */
+- (void)authenticateLocalPlayer
+{
+    //gamecenterのプレイヤーを取得
+    
+    GKLocalPlayer* player = [GKLocalPlayer localPlayer];
+    player.authenticateHandler = ^(UIViewController* ui, NSError* error )
+    {
+        if( nil != ui )
+        {
+            [self presentViewController:ui animated:YES completion:nil];
+        }
+        
+    };
 }
 
 @end

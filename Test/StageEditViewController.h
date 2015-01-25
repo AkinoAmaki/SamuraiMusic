@@ -34,7 +34,6 @@
     NSTimer *timer;                     //0.1秒ごとにスライダー・ラベル等を更新するためのタイマー
     CGPoint initPoint;                  //アイコン作成に失敗したときに元の座標に戻すため、元の座標を格納しておくための変数
     NSMutableArray *animatingNowIconArray;  //現在アニメーションされているアイコンを格納する配列
-    NSMutableArray *exceptionAreaArray;     //例外エリアを格納する配列
     int zenkai;        //音楽再生時は0.1秒前、一時停止時はハンドでタイムスライダーを動かす直前の、音楽の再生時間
     int iconTagNumber; //アイコン毎にユニークなタグ番号
     float singleTapAnimationDuration;   //シングルタップのアニメーション時間
@@ -46,11 +45,13 @@
     NSString *kakutyoushi;              //再生する曲の拡張子
     Icon *tempIcon;
 }
-@property (nonatomic, retain)NSMutableArray *iconArray;          //作成したアイコンを格納する配列
+@property (nonatomic, retain) NSMutableArray *iconArray;              //作成したアイコンを格納する配列
+@property (nonatomic, retain) NSMutableArray *exceptionAreaArray;     //例外エリアを格納する配列
 @property int stageNumber; //何番目のステージを選んだかを格納する変数。一番目は0。(常に一番最後の番号は新規作成)
 @property int mountOfStages; //ステージの総数
 @property (nonatomic, retain)NSMutableArray *stages;  //全ての譜面名、曲名、曲の拡張子、譜面本体を収めた配列を格納
 @property NSString *musicPath;
 @property BOOL newHumen; //新しく作成した譜面か否かを格納する
+-(void)setExceptionArea:(CGRect)rect startTime:(NSTimeInterval)startTime endTime:(NSTimeInterval)endTime iconTagNumber:(int)tag;
 
 @end

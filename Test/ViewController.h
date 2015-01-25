@@ -8,8 +8,9 @@
 
 #import <UIKit/UIKit.h>
 #import "Icon.h"
+#import <GameKit/GameKit.h>
 
-@interface ViewController : UIViewController<NSCoding>{
+@interface ViewController : UIViewController<NSCoding, GKGameCenterControllerDelegate>{
     float singleTapGestureDuration;
     float panGestureDuration;
     float longPressGestureDuration;

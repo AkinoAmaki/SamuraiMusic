@@ -14,7 +14,6 @@
 @synthesize startTime;
 @synthesize endTime;
 @synthesize iconTagNumber;
-@synthesize deserializedIconArray;
 
 - (void)encodeWithCoder:(NSCoder *)encoder
 {
@@ -49,15 +48,12 @@
     return self;
 }
 
-- (NSData *)serialize:(NSMutableArray *)iconArray{
++ (NSData *)serialize:(NSMutableArray *)iconArray{
     NSData* iconData = [NSKeyedArchiver archivedDataWithRootObject:iconArray];
     return iconData;
 }
-- (NSMutableArray *)deserialize:(NSData *)data{
-    
-    deserializedIconArray = (NSMutableArray *)[NSKeyedUnarchiver unarchiveObjectWithData:data];
-    NSLog(@"%@",deserializedIconArray);
-    return deserializedIconArray;
++ (NSMutableArray *)deserialize:(NSData *)data{
+    return (NSMutableArray *)[NSKeyedUnarchiver unarchiveObjectWithData:data];
 }
 
 @end

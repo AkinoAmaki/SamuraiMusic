@@ -9,11 +9,52 @@
 #import "MainViewController.h"
 
 @implementation MainViewController
+@synthesize stages;
+@synthesize stageNumber;
 
 - (void)viewDidLoad {
     [super viewDidLoad];
     animationDuration = 1.0f;
     // Do any additional setup after loading the view, typically from a nib.
+    //Appdelegateを初期化
+    app = [[UIApplication sharedApplication] delegate];
+    
+    score = 0; //スコアを初期化
+    combo = 0; //コンボ回数の初期化
+    perfectKeisuu = 1.0; //タップタイミングがPerfectのときにかける係数を初期化
+    greatKeisuu   = 0.8; //タップタイミングがGreatのときにかける係数を初期化
+    goodKeisuu    = 0.5; //タップタイミングがGoodのときにかける係数を初期化
+    
+    perfectNum = 0;
+    greatNum   = 0;
+    goodNum    = 0;
+    missNum    = 0;
+    
+    scoreLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, [UIScreen mainScreen].bounds.size.height - 60, 150, 30)];
+    scoreLabel.textColor = [UIColor whiteColor];
+    scoreLabel.font = app.font;
+    [self.view addSubview:scoreLabel];
+    scoreLabel.text = [NSString stringWithFormat:@"%07d",score];
+    
+    
+    UIButton *btn = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    btn.frame = CGRectMake(100, 100, 100, 30);
+    [btn setTitle:@"押してね" forState:UIControlStateNormal];
+    [self.view addSubview:btn];
+    // ボタンがタッチアップされた時にhogeメソッドを呼び出す
+    [btn addTarget:self action:@selector(hoge:)
+  forControlEvents:UIControlEventTouchUpInside];
+    
+    [self startMusic];
+    
+    //プレイが終わったら結果画面に移る
+    //    //!!!: デバッグ用に10秒にしているが、本番時には再生時間の秒数に変更する。
+    //    [NSTimer scheduledTimerWithTimeInterval:10
+    //                                     target:self
+    //                                   selector:@selector(modalResultView)
+    //                                   userInfo:nil
+    //                                    repeats:NO
+    //     ];
 }
 
 
@@ -26,128 +67,182 @@
     self.view = mainView;
 }
 
+
 - (void)viewDidAppear:(BOOL)animated{
-    UIButton *btn = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-    btn.frame = CGRectMake(100, 100, 100, 30);
-    [btn setTitle:@"押してね" forState:UIControlStateNormal];
-    [self.view addSubview:btn];
-    // ボタンがタッチダウンされた時にhogeメソッドを呼び出す
-    [btn addTarget:self action:@selector(hoge:)
-  forControlEvents:UIControlEventTouchUpInside];
-    
+
+
 }
 
 //音楽が選ばれ、ゲームスタートする際のメソッド
 -(void)hoge:(UIButton*)button{
     // ここに何かの処理を記述する
     // （引数の button には呼び出し元のUIButtonオブジェクトが引き渡されてきます）
-    [button removeFromSuperview];
-    [self startMusic];
-    musicStartTime = [NSDate date];
+//    [button removeFromSuperview];
+    [self modalResultView];
+}
+
+- (void)setAudio:(NSString *)musicName kakutyoushi:(NSString *)extension volume:(float)volume{
+    //再生対象の音楽ファイルのパスを指定する
+    //Documentsファイルを指定
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *DocumentsDirPath = [paths objectAtIndex:0];
+    //再生曲名及び拡張子を指定
+    //現状、拡張子は全てm4aに強制変換しているので、m4aに変更する
+    extension = @"m4a";
+    NSString *kyokumeiAndKakutyoushi = [musicName stringByAppendingPathExtension:extension];
+    //上の２つを結合
+    NSString *path = [DocumentsDirPath stringByAppendingPathComponent:kyokumeiAndKakutyoushi];
+    //musicPathに指定する
+    NSString *musicPath = path;
+    if ([[NSFileManager defaultManager] fileExistsAtPath:musicPath]) {
+        NSURL *url = [NSURL fileURLWithPath:musicPath];
+        NSError *error = nil;
+        
+        audio = [[AVAudioPlayer alloc] initWithContentsOfURL:url error:&error];
+//            [audio prepareToPlay];
+        audio.volume = volume;
+        
+        // エラーが起きたとき
+        if ( error != nil )
+        {
+            NSLog(@"Error %@", [error localizedDescription]);
+        }
+        
+    }else{
+        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"エラー" message:@"再生する曲が見つかりませんでした。この譜面を削除してください。" delegate:self cancelButtonTitle:nil otherButtonTitles:@"ok", nil];
+        [alert show];
+    }
 }
 
 //音楽の再生と決められた時間毎にアニメーションとタップ判定を生み出すメソッド
 - (void)startMusic{
-    //デバッグ用に、適当にデータを作る
-//    TapGesture *t1 = [[TapGesture alloc] init];
-//    t1.startTime = 3;
-//    t1.x = 100;
-//    t1.y = 100;
-//    
-//    TapGesture *t2 = [[TapGesture alloc] init];
-//    t2.startTime = 4;
-//    t2.x = 150;
-//    t2.y = 150;
-//    
-//    TapGesture *t3 = [[TapGesture alloc] init];
-//    t3.startTime = 5;
-//    t3.x = 200;
-//    t3.y = 200;
-//    
-//    tapMusicArray = [[NSArray alloc] initWithObjects:t1, t2, t3, nil];
-    
+    //各々のジェスチャーのレコグナイザを登録
     [self createTapGestureRecognizers:mainView];
-    
-//    LongPressGesture *l1 = [[LongPressGesture alloc] init];
-//    l1.startTime = 3;
-//    l1.x = 100;
-//    l1.y = 100;
-//    
-//    LongPressGesture *l2 = [[LongPressGesture alloc] init];
-//    l2.startTime = 4;
-//    l2.x = 150;
-//    l2.y = 150;
-//    
-//    LongPressGesture *l3 = [[LongPressGesture alloc] init];
-//    l3.startTime = 5;
-//    l3.x = 200;
-//    l3.y = 200;
-//    
-//    tapMusicArray = [[NSArray alloc] initWithObjects:l1, l2, l3, nil];
-    
+    [self createPanGestureRecognizers:mainView];
     [self createLongPressGestureRecognizers:mainView];
     
-    TapGesture *p1 = [[TapGesture alloc] init];
-    p1.startTime = 3;
-    p1.x = 100;
-    p1.y = 100;
-    
-    PanGesture *p2 = [[PanGesture alloc] init];
-    p2.startTime = 5;
-    p2.x = 150;
-    p2.y = 150;
-    
-    LongPressGesture *p3 = [[LongPressGesture alloc] init];
-    p3.startTime = 7;
-    p3.x = 200;
-    p3.y = 200;
-    
-    tapMusicArray = [[NSArray alloc] initWithObjects:p1, p2, p3, nil];
-    
-    [self createPanGestureRecognizers:mainView];
+    //タップするアイコンをget
+    NSData *data = [[stages objectAtIndex:stageNumber] objectAtIndex:3];
+    tapMusicArray = [[NSArray alloc] initWithArray:[Icon deserialize:data]];
     
     for (int i = 0;  i < [tapMusicArray count]; i++) {
         //シングルタップ・スワイプ・ロングプレスのいずれかを判定し、タップ画像を表示するタイマーを設定する
-        if ([[tapMusicArray objectAtIndex:i] isKindOfClass:[TapGesture class]]) {
-            tapGesture = [tapMusicArray objectAtIndex:i];
-            // 指定時間経過後に呼び出すメソッドに渡すデータをセット
-            NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
-                                      [NSNumber numberWithFloat:tapGesture.x], @"x", [NSNumber numberWithFloat:tapGesture.y], @"y", [NSNumber numberWithInt:i], @"gestureNumber", @"TapGesture", @"gestureType", nil];
-            NSLog(@"x:%f",tapGesture.x);
-            // タイマーを生成
-            [NSTimer scheduledTimerWithTimeInterval:tapGesture.startTime - animationDuration
-                                             target:self
-                                           selector:@selector(doTimer:)
-                                           userInfo:userInfo
-                                            repeats:NO
-             ];
-        }else if ([[tapMusicArray objectAtIndex:i] isKindOfClass:[PanGesture class]]){
-            panGesture = [tapMusicArray objectAtIndex:i];
-            // 指定時間経過後に呼び出すメソッドに渡すデータをセット
-            NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
-                                      [NSNumber numberWithFloat:panGesture.x], @"x", [NSNumber numberWithFloat:panGesture.y], @"y", [NSNumber numberWithInt:i], @"gestureNumber", @"PanGesture", @"gestureType", nil];
-            // タイマーを生成
-            [NSTimer scheduledTimerWithTimeInterval:panGesture.startTime - animationDuration
-                                             target:self
-                                           selector:@selector(doTimer:)
-                                           userInfo:userInfo
-                                            repeats:NO
-             ];
+        Icon *icon = [Icon new];
+        
+        //tapMusicArrayの要素がNSNullの場合は、アイコン登録処理をスキップする
+        if(![tapMusicArray[i] isKindOfClass:[NSNull class]]){
+            icon = tapMusicArray[i];
+            switch (icon.iconType) {
+                case 1:
+                {
+                    tapGesture = [TapGesture new];
+                    tapGesture.x = icon.centerPoint.x;
+                    tapGesture.y = icon.centerPoint.y;
+                    tapGesture.startTime = icon.startTime;
+                    // 指定時間経過後に呼び出すメソッドに渡すデータをセット
+                    NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
+                                              [NSNumber numberWithFloat:tapGesture.x], @"x", [NSNumber numberWithFloat:tapGesture.y], @"y", [NSNumber numberWithInt:i], @"gestureNumber", @"TapGesture", @"gestureType", nil];
+                    // タイマーを生成
+                    [NSTimer scheduledTimerWithTimeInterval:tapGesture.startTime - animationDuration
+                                                     target:self
+                                                   selector:@selector(doTimer:)
+                                                   userInfo:userInfo
+                                                    repeats:NO
+                     ];
+                }
+                    break;
+                case 2:
+                {
+                    panGesture = [PanGesture new];
+                    panGesture.x = icon.centerPoint.x;
+                    panGesture.y = icon.centerPoint.y;
+                    panGesture.startTime = icon.startTime;
+                    // 指定時間経過後に呼び出すメソッドに渡すデータをセット
+                    NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
+                                              [NSNumber numberWithFloat:panGesture.x], @"x", [NSNumber numberWithFloat:panGesture.y], @"y", [NSNumber numberWithInt:i], @"gestureNumber", @"PanGesture", @"gestureType", nil];
+                    // タイマーを生成
+                    [NSTimer scheduledTimerWithTimeInterval:panGesture.startTime - animationDuration
+                                                     target:self
+                                                   selector:@selector(doTimer:)
+                                                   userInfo:userInfo
+                                                    repeats:NO
+                     ];
+                    
+                }
+                    break;
+                case 3:
+                {
+                    longPressGesture = [LongPressGesture new];
+                    longPressGesture.x = icon.centerPoint.x;
+                    longPressGesture.y = icon.centerPoint.y;
+                    longPressGesture.startTime = icon.startTime;
+                    // 指定時間経過後に呼び出すメソッドに渡すデータをセット
+                    NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
+                                              [NSNumber numberWithFloat:longPressGesture.x], @"x", [NSNumber numberWithFloat:longPressGesture.y], @"y", [NSNumber numberWithInt:i], @"gestureNumber", @"LongPressGesture", @"gestureType", nil];
+                    // タイマーを生成
+                    [NSTimer scheduledTimerWithTimeInterval:longPressGesture.startTime - animationDuration
+                                                     target:self
+                                                   selector:@selector(doTimer:)
+                                                   userInfo:userInfo
+                                                    repeats:NO
+                     ];
+                    
+                }
+                    break;
+                default:
+                    break;
+            }
 
-        }else if ([[tapMusicArray objectAtIndex:i] isKindOfClass:[LongPressGesture class]]){
-            longPressGesture = [tapMusicArray objectAtIndex:i];
-            // 指定時間経過後に呼び出すメソッドに渡すデータをセット
-            NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
-                                      [NSNumber numberWithFloat:longPressGesture.x], @"x", [NSNumber numberWithFloat:longPressGesture.y], @"y", [NSNumber numberWithInt:i], @"gestureNumber", @"LongPressGesture", @"gestureType", nil];
-            // タイマーを生成
-            [NSTimer scheduledTimerWithTimeInterval:longPressGesture.startTime - animationDuration
-                                             target:self
-                                           selector:@selector(doTimer:)
-                                           userInfo:userInfo
-                                            repeats:NO
-             ];
         }
+        //        if ([[tapMusicArray objectAtIndex:i] isKindOfClass:[TapGesture class]]) {
+//            tapGesture = [tapMusicArray objectAtIndex:i];
+//            // 指定時間経過後に呼び出すメソッドに渡すデータをセット
+//            NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
+//                                      [NSNumber numberWithFloat:tapGesture.x], @"x", [NSNumber numberWithFloat:tapGesture.y], @"y", [NSNumber numberWithInt:i], @"gestureNumber", @"TapGesture", @"gestureType", nil];
+//            NSLog(@"x:%f",tapGesture.x);
+//            // タイマーを生成
+//            [NSTimer scheduledTimerWithTimeInterval:tapGesture.startTime - animationDuration
+//                                             target:self
+//                                           selector:@selector(doTimer:)
+//                                           userInfo:userInfo
+//                                            repeats:NO
+//             ];
+//        }else if ([[tapMusicArray objectAtIndex:i] isKindOfClass:[PanGesture class]]){
+//            panGesture = [tapMusicArray objectAtIndex:i];
+//            // 指定時間経過後に呼び出すメソッドに渡すデータをセット
+//            NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
+//                                      [NSNumber numberWithFloat:panGesture.x], @"x", [NSNumber numberWithFloat:panGesture.y], @"y", [NSNumber numberWithInt:i], @"gestureNumber", @"PanGesture", @"gestureType", nil];
+//            // タイマーを生成
+//            [NSTimer scheduledTimerWithTimeInterval:panGesture.startTime - animationDuration
+//                                             target:self
+//                                           selector:@selector(doTimer:)
+//                                           userInfo:userInfo
+//                                            repeats:NO
+//             ];
+//
+//        }else if ([[tapMusicArray objectAtIndex:i] isKindOfClass:[LongPressGesture class]]){
+//            longPressGesture = [tapMusicArray objectAtIndex:i];
+//            // 指定時間経過後に呼び出すメソッドに渡すデータをセット
+//            NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
+//                                      [NSNumber numberWithFloat:longPressGesture.x], @"x", [NSNumber numberWithFloat:longPressGesture.y], @"y", [NSNumber numberWithInt:i], @"gestureNumber", @"LongPressGesture", @"gestureType", nil];
+//            // タイマーを生成
+//            [NSTimer scheduledTimerWithTimeInterval:longPressGesture.startTime - animationDuration
+//                                             target:self
+//                                           selector:@selector(doTimer:)
+//                                           userInfo:userInfo
+//                                            repeats:NO
+//             ];
+//        }
     }
+    
+    //現在時刻を保存
+    musicStartTime = [NSDate date];
+    
+    //音楽再生開始
+    [self setAudio:[[stages objectAtIndex:stageNumber] objectAtIndex:1] kakutyoushi:[[stages objectAtIndex:stageNumber] objectAtIndex:2] volume:0.2f];
+    [audio play];
+
+    NSLog(@"プレイ開始");
 }
 
 - (void)doTimer:(NSTimer *)timer{
@@ -161,7 +256,6 @@
 
     if ([gestureType isEqualToString:@"TapGesture"]) {
         if (mbAnimation1 == nil) {
-            NSLog(@"mbAnimation1起動");
             mbAnimation1 = [[MBAnimationView alloc] init];
             [mbAnimation1 setAnimationImage:@"pipo-btleffect007.png" :120 :120 :14];
             mbAnimation1.frame = CGRectMake(userInfoX - 60, userInfoY - 60, 120, 120);
@@ -174,7 +268,6 @@
             userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
                         [NSNumber numberWithInt:1], @"Number", nil];
         }else if (mbAnimation2 == nil){
-            NSLog(@"mbAnimation2起動");
             mbAnimation2 = [[MBAnimationView alloc] init];
             [mbAnimation2 setAnimationImage:@"pipo-btleffect007.png" :120 :120 :14];
             mbAnimation2.frame = CGRectMake(userInfoX - 60, userInfoY - 60, 120, 120);
@@ -187,7 +280,6 @@
             userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
                         [NSNumber numberWithInt:2], @"Number", nil];
         }else if (mbAnimation3 == nil){
-            NSLog(@"mbAnimation3起動");
             mbAnimation3 = [[MBAnimationView alloc] init];
             [mbAnimation3 setAnimationImage:@"pipo-btleffect007.png" :120 :120 :14];
             mbAnimation3.frame = CGRectMake(userInfoX - 60, userInfoY - 60, 120, 120);
@@ -200,15 +292,8 @@
             userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
                         [NSNumber numberWithInt:3], @"Number", nil];
         }
-        [NSTimer scheduledTimerWithTimeInterval:animationDuration
-                                         target:self
-                                       selector:@selector(mbAnimationToNil:)
-                                       userInfo:userInfo
-                                        repeats:NO
-         ];
     }else if ([gestureType isEqualToString:@"PanGesture"]){
         if (mbAnimation1 == nil) {
-            NSLog(@"mbAnimation1起動");
             mbAnimation1 = [[MBAnimationView alloc] init];
             [mbAnimation1 setAnimationImage:@"PanGesture.png" :120 :120 :20];
             mbAnimation1.frame = CGRectMake(userInfoX - 60, userInfoY - 60, 120, 120);
@@ -221,7 +306,6 @@
             userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
                         [NSNumber numberWithInt:1], @"Number", nil];
         }else if (mbAnimation2 == nil){
-            NSLog(@"mbAnimation2起動");
             mbAnimation2 = [[MBAnimationView alloc] init];
             [mbAnimation2 setAnimationImage:@"PanGesture.png" :120 :120 :20];
             mbAnimation2.frame = CGRectMake(userInfoX - 60, userInfoY - 60, 120, 120);
@@ -234,7 +318,6 @@
             userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
                         [NSNumber numberWithInt:2], @"Number", nil];
         }else if (mbAnimation3 == nil){
-            NSLog(@"mbAnimation3起動");
             mbAnimation3 = [[MBAnimationView alloc] init];
             [mbAnimation3 setAnimationImage:@"PanGesture.png" :120 :120 :20];
             mbAnimation3.frame = CGRectMake(userInfoX - 60, userInfoY - 60, 120, 120);
@@ -249,7 +332,6 @@
         }
     }else if ([gestureType isEqualToString:@"LongPressGesture"]){
         if (mbAnimation1 == nil) {
-            NSLog(@"mbAnimation1起動");
             mbAnimation1 = [[MBAnimationView alloc] init];
             [mbAnimation1 setAnimationImage:@"LongPressGesture.png" :120 :120 :14];
             mbAnimation1.frame = CGRectMake(userInfoX - 60, userInfoY - 60, 120, 120);
@@ -262,7 +344,6 @@
             userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
                         [NSNumber numberWithInt:1], @"Number", nil];
         }else if (mbAnimation2 == nil){
-            NSLog(@"mbAnimation2起動");
             mbAnimation2 = [[MBAnimationView alloc] init];
             [mbAnimation2 setAnimationImage:@"LongPressGesture.png" :120 :120 :14];
             mbAnimation2.frame = CGRectMake(userInfoX - 60, userInfoY - 60, 120, 120);
@@ -275,7 +356,6 @@
             userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
                         [NSNumber numberWithInt:2], @"Number", nil];
         }else if (mbAnimation3 == nil){
-            NSLog(@"mbAnimation3起動");
             mbAnimation3 = [[MBAnimationView alloc] init];
             [mbAnimation3 setAnimationImage:@"LongPressGesture.png" :120 :120 :14];
             mbAnimation3.frame = CGRectMake(userInfoX - 60, userInfoY - 60, 120, 120);
@@ -290,7 +370,7 @@
         }
     }
     
-    [NSTimer scheduledTimerWithTimeInterval:animationDuration
+    [NSTimer scheduledTimerWithTimeInterval:animationDuration - 0.1
                                      target:self
                                    selector:@selector(mbAnimationToNil:)
                                    userInfo:userInfo
@@ -302,12 +382,21 @@
     int i = [[(NSDictionary *)timer.userInfo objectForKey:@"Number"] intValue];
     switch (i) {
         case 1:
+            if ([mbAnimation1 isAnimating]) {
+                [self popUpHanteiKekka:mbAnimation1 Kekka:Miss];
+            }
             mbAnimation1 = nil;
             break;
         case 2:
+            if ([mbAnimation2 isAnimating]) {
+                [self popUpHanteiKekka:mbAnimation2 Kekka:Miss];
+            }
             mbAnimation2 = nil;
             break;
         case 3:
+            if ([mbAnimation3 isAnimating]) {
+                [self popUpHanteiKekka:mbAnimation3 Kekka:Miss];
+            }
             mbAnimation3 = nil;
             break;
         default:
@@ -404,74 +493,103 @@
 //シングルタップ開始のタイミングと座標が一致しているかを判定するメソッド。一致していれば対象のアニメーションのorigin.xとorigin.yを返す。一致していなければCGPointZeroを返す。
 -(CGPoint)accuracyOfTapGesture:(CGPoint)point{
     CGPoint cg = CGPointZero;
-    float  thresholdOfTimeInterval = 0.5; //タップしたタイミングの曖昧さの閾値を設定
+    
     NSDate *now = [NSDate date]; //現在時刻を取得
     NSTimeInterval interval = [now timeIntervalSinceDate:musicStartTime]; //現在時刻とスタート時点の時刻を比較
-    TapGesture *t;
+    float gestureStartTime;
+    
     //設定した閾値から、タップ成功範囲とタイミングを設定
+    Icon *icon = [Icon new];
     if (CGRectContainsPoint(mbAnimation1.frame, point)) {
-        t = [tapMusicArray objectAtIndex:(mbAnimation1.tag - 1)]; //判定対象のTapGestureを取得
-        if([t isKindOfClass:[TapGesture class]]) cg = CGPointMake(mbAnimation1.frame.origin.x, mbAnimation1.frame.origin.y);
+        [mbAnimation1 stopAnimating];
+        icon = tapMusicArray[mbAnimation1.tag - 1];
+        if (icon.iconType == 1) {
+            cg = CGPointMake(mbAnimation1.frame.origin.x, mbAnimation1.frame.origin.y);
+            gestureStartTime = icon.startTime;
+            [self judgeTouchTiming:mbAnimation1 cg:cg interval:interval gestureStartTime:gestureStartTime];
+        }
     }else if (CGRectContainsPoint(mbAnimation2.frame, point)){
-        t = [tapMusicArray objectAtIndex:(mbAnimation2.tag - 1)]; //判定対象のTapGestureを取得
-        if([t isKindOfClass:[TapGesture class]]) cg = CGPointMake(mbAnimation2.frame.origin.x, mbAnimation2.frame.origin.y);
+        [mbAnimation2 stopAnimating];
+        icon = tapMusicArray[mbAnimation2.tag - 1];
+        if (icon.iconType == 1) {
+            cg = CGPointMake(mbAnimation2.frame.origin.x, mbAnimation2.frame.origin.y);
+            gestureStartTime = icon.startTime;
+            [self judgeTouchTiming:mbAnimation2 cg:cg interval:interval gestureStartTime:gestureStartTime];
+        }
     }else if (CGRectContainsPoint(mbAnimation3.frame, point)){
-        t = [tapMusicArray objectAtIndex:(mbAnimation3.tag - 1)]; //判定対象のTapGestureを取得
-        if([t isKindOfClass:[TapGesture class]]) cg = CGPointMake(mbAnimation3.frame.origin.x, mbAnimation3.frame.origin.y);
+        icon = tapMusicArray[mbAnimation3.tag - 1];
+        [mbAnimation3 stopAnimating];
+        if (icon.iconType == 1) {
+            cg = CGPointMake(mbAnimation3.frame.origin.x, mbAnimation3.frame.origin.y);
+            gestureStartTime = icon.startTime;
+            [self judgeTouchTiming:mbAnimation3 cg:cg interval:interval gestureStartTime:gestureStartTime];
+        }
     }else{
         NSLog(@"タップした座標が合っていない");
         NSLog(@"x:%f y:%f",mbAnimation1.frame.origin.x,mbAnimation1.frame.origin.y);
         return cg;
     }
     
-    float gestureStartTime = t.startTime;
-    
-    if ((interval - gestureStartTime) >= thresholdOfTimeInterval * -1 && (interval - gestureStartTime) <= thresholdOfTimeInterval) {
-        NSLog(@"最高得点時からの差:%lf",(interval - gestureStartTime));
-    }else{
-        NSLog(@"タイミング合っていない");
-        NSLog(@"最高得点時からの差:%lf",(interval - gestureStartTime));
-        cg = CGPointZero;
-    }
     return cg;
 }
 
 //スワイプ開始のタイミングと座標が一致しているかを判定するメソッド。一致していれば対象のアニメーションのorigin.xとorigin.yを返す。一致していなければCGPointZeroを返す。
 - (CGPoint)accuracyOfPanGesture:(CGPoint)point{
     CGPoint cg = CGPointZero;
-    float  thresholdOfTimeInterval = 0.5; //タップしたタイミングの曖昧さの閾値を設定
     NSDate *now = [NSDate date]; //現在時刻を取得
     NSTimeInterval interval = [now timeIntervalSinceDate:musicStartTime]; //現在時刻とスタート時点の時刻を比較
     PanGesture *p;
     
     NSLog(@"pointX:%f pointY:%f",point.x, point.y);
     NSLog(@"originX:%f originY:%f sizeX:%f sizeY:%f",mbAnimation1.frame.origin.x,mbAnimation1.frame.origin.y,mbAnimation1.frame.size.width,mbAnimation1.frame.size.height);
+    float gestureStartTime = p.startTime;
     
     //設定した閾値から、タップ成功範囲とタイミングを設定
     if (CGRectContainsPoint(mbAnimation1.frame, point)) {
+        [mbAnimation1 stopAnimating];
         p = [tapMusicArray objectAtIndex:(mbAnimation1.tag - 1)]; //判定対象のLongPressGestureを取得
-        if([p isKindOfClass:[PanGesture class]]) cg = CGPointMake(mbAnimation1.frame.origin.x, mbAnimation1.frame.origin.y);
+        if([p isKindOfClass:[PanGesture class]]){
+            cg = CGPointMake(mbAnimation1.frame.origin.x, mbAnimation1.frame.origin.y);
+            [self judgeTouchTiming:mbAnimation1 cg:cg interval:interval gestureStartTime:gestureStartTime];
+        }
     }else if (CGRectContainsPoint(mbAnimation2.frame, point)){
+        [mbAnimation2 stopAnimating];
         p = [tapMusicArray objectAtIndex:(mbAnimation2.tag - 1)]; //判定対象のLongPressGestureを取得
-        if([p isKindOfClass:[PanGesture class]]) cg = CGPointMake(mbAnimation2.frame.origin.x, mbAnimation2.frame.origin.y);
+        if([p isKindOfClass:[PanGesture class]]){
+            cg = CGPointMake(mbAnimation2.frame.origin.x, mbAnimation2.frame.origin.y);
+            [self judgeTouchTiming:mbAnimation2 cg:cg interval:interval gestureStartTime:gestureStartTime];
+        }
     }else if (CGRectContainsPoint(mbAnimation3.frame, point)){
+        [mbAnimation3 stopAnimating];
         p = [tapMusicArray objectAtIndex:(mbAnimation3.tag - 1)]; //判定対象のLongPressGestureを取得
-        if([p isKindOfClass:[PanGesture class]]) cg = CGPointMake(mbAnimation3.frame.origin.x, mbAnimation3.frame.origin.y);
+        if([p isKindOfClass:[PanGesture class]]){
+            cg = CGPointMake(mbAnimation3.frame.origin.x, mbAnimation3.frame.origin.y);
+            [self judgeTouchTiming:mbAnimation1 cg:cg interval:interval gestureStartTime:gestureStartTime];
+        }
     }else{
         NSLog(@"タップした座標が合っていない");
         NSLog(@"x:%f y:%f",mbAnimation1.frame.origin.x,mbAnimation1.frame.origin.y);
         return cg;
     }
     
-    float gestureStartTime = p.startTime;
-    
-    if ((interval - gestureStartTime) >= thresholdOfTimeInterval * -1 && (interval - gestureStartTime) <= thresholdOfTimeInterval) {
-        NSLog(@"最高得点時からの差:%lf",(interval - gestureStartTime));
-    }else{
-        NSLog(@"タイミング合っていない");
-        NSLog(@"最高得点時からの差:%lf",(interval - gestureStartTime));
-        cg = CGPointZero;
-    }
+//    if ((interval - gestureStartTime) >= thresholdOfTimeInterval_Perfect * -1 && (interval - gestureStartTime) <= thresholdOfTimeInterval_Perfect) {
+//        NSLog(@"Perfect!:%lf",(interval - gestureStartTime));
+//        combo++;
+//        [self caliculateScore:1];
+//    }else if ((interval - gestureStartTime) >= thresholdOfTimeInterval_Great * -1 && (interval - gestureStartTime) <= thresholdOfTimeInterval_Great) {
+//        NSLog(@"Great!  :%lf",(interval - gestureStartTime));
+//        combo++;
+//        [self caliculateScore:2];
+//    }else if ((interval - gestureStartTime) >= thresholdOfTimeInterval_Good * -1 && (interval - gestureStartTime) <= thresholdOfTimeInterval_Good) {
+//        NSLog(@"Good!   :%lf",(interval - gestureStartTime));
+//        combo++;
+//        [self caliculateScore:3];
+//    }else{
+//        NSLog(@"Miss!   :%lf",(interval - gestureStartTime));
+//        combo = 0;
+//        cg = CGPointZero;
+//    }
+
     
     return cg;
     
@@ -481,37 +599,193 @@
 //ロングプレス開始のタイミングと座標が一致しているかを判定するメソッド。一致していれば対象のアニメーションのorigin.xとorigin.yを返す。一致していなければCGPointZeroを返す。
 -(CGPoint)accuracyOfLongPressGesture:(CGPoint)point{
     CGPoint cg = CGPointZero;
-    float  thresholdOfTimeInterval = 0.5; //タップしたタイミングの曖昧さの閾値を設定
     NSDate *now = [NSDate date]; //現在時刻を取得
     NSTimeInterval interval = [now timeIntervalSinceDate:musicStartTime]; //現在時刻とスタート時点の時刻を比較
     LongPressGesture *l;
+    float gestureStartTime = l.startTime;
     //設定した閾値から、タップ成功範囲とタイミングを設定
     if (CGRectContainsPoint(mbAnimation1.frame, point)) {
+        [mbAnimation1 stopAnimating];
         l = [tapMusicArray objectAtIndex:(mbAnimation1.tag - 1)]; //判定対象のLongPressGestureを取得
-        if([l isKindOfClass:[LongPressGesture class]]) cg = CGPointMake(mbAnimation1.frame.origin.x, mbAnimation1.frame.origin.y);
+        if([l isKindOfClass:[LongPressGesture class]]){
+           cg = CGPointMake(mbAnimation1.frame.origin.x, mbAnimation1.frame.origin.y);
+           [self judgeTouchTiming:mbAnimation1 cg:cg interval:interval gestureStartTime:gestureStartTime];
+        }
     }else if (CGRectContainsPoint(mbAnimation2.frame, point)){
+        [mbAnimation2 stopAnimating];
         l = [tapMusicArray objectAtIndex:(mbAnimation2.tag - 1)]; //判定対象のLongPressGestureを取得
-        if([l isKindOfClass:[LongPressGesture class]]) cg = CGPointMake(mbAnimation2.frame.origin.x, mbAnimation2.frame.origin.y);
+        if([l isKindOfClass:[LongPressGesture class]]){
+            cg = CGPointMake(mbAnimation2.frame.origin.x, mbAnimation2.frame.origin.y);
+            [self judgeTouchTiming:mbAnimation2 cg:cg interval:interval gestureStartTime:gestureStartTime];
+        }
     }else if (CGRectContainsPoint(mbAnimation3.frame, point)){
+        [mbAnimation3 stopAnimating];
         l = [tapMusicArray objectAtIndex:(mbAnimation3.tag - 1)]; //判定対象のLongPressGestureを取得
-        if([l isKindOfClass:[LongPressGesture class]]) cg = CGPointMake(mbAnimation3.frame.origin.x, mbAnimation3.frame.origin.y);
+        if([l isKindOfClass:[LongPressGesture class]]){
+            cg = CGPointMake(mbAnimation3.frame.origin.x, mbAnimation3.frame.origin.y);
+            [self judgeTouchTiming:mbAnimation3 cg:cg interval:interval gestureStartTime:gestureStartTime];
+        }
     }else{
         NSLog(@"タップした座標が合っていない");
         NSLog(@"x:%f y:%f",mbAnimation1.frame.origin.x,mbAnimation1.frame.origin.y);
         return cg;
     }
     
-    float gestureStartTime = l.startTime;
     
-    if ((interval - gestureStartTime) >= thresholdOfTimeInterval * -1 && (interval - gestureStartTime) <= thresholdOfTimeInterval) {
-        NSLog(@"最高得点時からの差:%lf",(interval - gestureStartTime));
-    }else{
-        NSLog(@"タイミング合っていない");
-        NSLog(@"最高得点時からの差:%lf",(interval - gestureStartTime));
-        cg = CGPointZero;
-    }
-
+    
+//    if ((interval - gestureStartTime) >= thresholdOfTimeInterval_Perfect * -1 && (interval - gestureStartTime) <= thresholdOfTimeInterval_Perfect) {
+//        NSLog(@"Perfect!:%lf",(interval - gestureStartTime));
+//        combo++;
+//        [self caliculateScore:1];
+//    }else if ((interval - gestureStartTime) >= thresholdOfTimeInterval_Great * -1 && (interval - gestureStartTime) <= thresholdOfTimeInterval_Great) {
+//        NSLog(@"Great!  :%lf",(interval - gestureStartTime));
+//        combo++;
+//        [self caliculateScore:2];
+//    }else if ((interval - gestureStartTime) >= thresholdOfTimeInterval_Good * -1 && (interval - gestureStartTime) <= thresholdOfTimeInterval_Good) {
+//        NSLog(@"Good!   :%lf",(interval - gestureStartTime));
+//        combo++;
+//        [self caliculateScore:3];
+//    }else{
+//        NSLog(@"Miss!   :%lf",(interval - gestureStartTime));
+//        combo = 0;
+//        cg = CGPointZero;
+//    }
+    
     return cg;
 }
 
+- (void)judgeTouchTiming:(MBAnimationView *)MBAnimation cg:(CGPoint)cg interval:(NSTimeInterval)interval gestureStartTime:(float)gestureStartTime{
+    float  thresholdOfTimeInterval_Perfect = 0.25; //タップしたタイミングの曖昧さの閾値を設定(Perfect)
+    float  thresholdOfTimeInterval_Great = 0.35; //タップしたタイミングの曖昧さの閾値を設定(Great)
+    float  thresholdOfTimeInterval_Good = 0.50; //タップしたタイミングの曖昧さの閾値を設定(Good)
+    
+    if ((interval - gestureStartTime) >= thresholdOfTimeInterval_Perfect * -1 && (interval - gestureStartTime) <= thresholdOfTimeInterval_Perfect) {
+        NSLog(@"Perfect!:%lf",(interval - gestureStartTime));
+        combo++;
+        perfectNum++;
+        [self popUpHanteiKekka:MBAnimation Kekka:Perfect];
+        [self caliculateScore:1];
+    }else if ((interval - gestureStartTime) >= thresholdOfTimeInterval_Great * -1 && (interval - gestureStartTime) <= thresholdOfTimeInterval_Great) {
+        NSLog(@"Great!  :%lf",(interval - gestureStartTime));
+        combo++;
+        greatNum++;
+        [self popUpHanteiKekka:MBAnimation Kekka:Great];
+        [self caliculateScore:2];
+    }else if ((interval - gestureStartTime) >= thresholdOfTimeInterval_Good * -1 && (interval - gestureStartTime) <= thresholdOfTimeInterval_Good) {
+        NSLog(@"Good!   :%lf",(interval - gestureStartTime));
+        combo++;
+        goodNum++;
+        [self popUpHanteiKekka:MBAnimation Kekka:Good];
+        [self caliculateScore:3];
+    }else{
+        NSLog(@"Miss!   :%lf",(interval - gestureStartTime));
+        cg = CGPointZero;
+        missNum++;
+        [self popUpHanteiKekka:MBAnimation Kekka:Miss];
+        combo = 0;
+    }
+}
+
+
+-(void)caliculateScore:(int)kekka{
+    float comboKeisuu;
+    if (combo == 0) {
+        comboKeisuu = 1;
+    }else if (combo <= 20) {
+        comboKeisuu = 1 + combo * 0.05;
+    }else{
+        comboKeisuu = 2;
+    }
+    
+    
+    int zoukaInt;
+    switch (kekka) {
+        case 1:
+            //Perfectのとき
+            zoukaInt = 1000 * perfectKeisuu + 300 * comboKeisuu;
+            score +=  zoukaInt;
+            break;
+        case 2:
+            //Greatのとき
+            zoukaInt = 1000 * greatKeisuu   + 300 * comboKeisuu;
+            score += zoukaInt;
+            break;
+        case 3:
+            //Goodのとき
+            zoukaInt = 1000 * goodKeisuu    + 300 * comboKeisuu;
+            score += zoukaInt;
+            break;
+        default:
+            zoukaInt = 0; //絶対defaultは通らないけど、適当に設定しないとWarningが出るので設定しておく
+            break;
+    }
+    [self refleshScore:score];
+    NSLog(@"score:%d",score);
+}
+
+-(void)popUpHanteiKekka:(MBAnimationView *)MBAnimation Kekka:(KekkaType)kekka{
+    DamageValueLabel *label = [DamageValueLabel new];
+    label.frame = CGRectOffset(MBAnimation.frame, 50, 50);
+    [self.view addSubview:label];
+    
+    if (kekka == Perfect) {
+        label.textColor = [UIColor yellowColor];
+        label.text      = @"Perfect!";
+    }else if (kekka == Great){
+        label.textColor = [UIColor greenColor];
+        label.text      = @"Great!";
+    }else if (kekka == Good){
+        label.textColor = [UIColor blueColor];
+        label.text      = @"Good!";
+    }else if (kekka == Miss){
+        label.textColor = [UIColor redColor];
+        label.text      = @"Miss...";
+    }
+    
+    [label startAnimationWithAnimationType:DamageAnimationType3];
+}
+
+-(void)refleshScore:(int)syou{
+    scoreLabel.text = [NSString stringWithFormat:@"%07d", syou];
+    [scoreLabel sizeToFit];
+}
+
+-(void)modalResultView{
+    int maxScore = [self caliculateMaxScore];
+    [audio stop];
+    ResultView *result = [[ResultView alloc] initWithData:score maxScore:maxScore perfectNum:perfectNum greatNum:greatNum goodNum:goodNum missNum:missNum];
+    [self presentViewController:result animated:YES completion:nil];
+}
+
+-(int)caliculateMaxScore{
+    int maxScore;
+    int x = 0;
+    
+    for (Icon *icon in tapMusicArray) {
+        if (![icon isMemberOfClass:[NSNull class]]) {
+            x++;
+        }
+    }
+    
+    NSLog(@"x:%d",x);
+    
+    float keisuu= 0;
+    for (int i = 0; i < x; i++) {
+        if (i == 0) {
+            keisuu = 1;
+        }else if (i <= 20) {
+            keisuu = 1 + (i * 0.05);
+        }else{
+            keisuu = 2;
+        }
+        maxScore += 1000 + 300 * keisuu;
+    }
+    NSLog(@"maxscore:%d",maxScore);
+    
+    return maxScore;
+}
+
+
+
 @end
+
