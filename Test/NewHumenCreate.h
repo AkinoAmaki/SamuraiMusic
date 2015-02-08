@@ -12,9 +12,10 @@
 #import "StageEditViewController.h"
 #import "UniqueFileName.h"
 #import "SVProgressHUD.h"
+#import "UniqueFileName.h"
 
 
-@interface NewHumenCreate : UITableViewController<UITableViewDataSource,UITableViewDelegate,NSCoding>{
+@interface NewHumenCreate : UITableViewController<UITableViewDataSource,UITableViewDelegate,NSCoding,UIAlertViewDelegate,UITextFieldDelegate>{
     NSMutableArray* sectionPlayList;
     NSMutableArray* sectionSongs;
     NSMutableDictionary* playListSongs;
@@ -23,6 +24,7 @@
 //    UIAlertView *humenNameAlertView;
 //    UITextField *humenNameTextField;
     NSString *kyokumei;
+    NSString *humenmei;
     NSString *kakutyoushi;
     AVURLAsset *urlAsset;
     BOOL finished;

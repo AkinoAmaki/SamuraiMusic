@@ -26,60 +26,27 @@
     panGestureDuration = 1;
     longPressGestureDuration = 1.4;
     
-    int first = (int)[[NSUserDefaults standardUserDefaults] integerForKey:@"first"];
-    if(first == 0){
-        NSLog(@"初回起動完了");
-        //初回起動時、初期曲をリストに突っ込んでおく。
-        NSMutableArray *nullArray = [[NSMutableArray alloc] init];
-        
-        //NSData型への変換は仕様上Iconクラスでしかできないので、とりあえず適用にIconクラスをインスタンス化してメソッド適用
-        NSData *data = [Icon serialize:nullArray];
-        NSArray *syokiArray = [[NSArray alloc] initWithObjects:@"humen1",@"Won't Go Home Without You Lyrics",@"mp3",data, nil];
-        syokiStages = [[NSMutableArray alloc] initWithObjects:syokiArray, nil];
-        [[NSUserDefaults standardUserDefaults] setObject:syokiStages forKey:@"stageArray"];
-        [[NSUserDefaults standardUserDefaults] setInteger:1 forKey:@"first"];
-        [[NSUserDefaults standardUserDefaults] synchronize];
-    }
+    //TODO: デバッグ終わり次第元に戻すGameCenterのログイン確認
+//    [self authenticateLocalPlayer];
     
-    [self authenticateLocalPlayer];
+    
 }
 
 - (void)viewDidAppear:(BOOL)animated{
-
+    //インタースティシャル広告のデリゲートの設定
+    [NADInterstitial sharedInstance].delegate = self;
+    
+    UILabel *l = [[UILabel alloc] initWithFrame:CGRectMake(100, 100, 200, 50)];
+    [self.view addSubview:l];
+    
+    [self backScreenTest];
 }
 
 - (void)backScreenTest{
-    UIImageView *leftMask  = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 100, [UIScreen mainScreen].bounds.size.height)];
-    UIImageView *rightMask = [[UIImageView alloc] initWithFrame:CGRectMake(220, 0, [UIScreen mainScreen].bounds.size.width - 220, [UIScreen mainScreen].bounds.size.height)];
-    [self.view addSubview:leftMask];
-    [self.view addSubview:rightMask];
-    leftMask.layer.masksToBounds = YES;
-    rightMask.layer.masksToBounds = YES;
-    
-    UIImageView *left  = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"wallLeft"]];
-    UIImageView *right = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"wallRight"]];
-    [leftMask addSubview:left];
-    [rightMask addSubview:right];
-    left.frame = CGRectMake(600 - left.bounds.size.width, -200, left.bounds.size.width, left.bounds.size.height);
-    right.frame = CGRectMake(-500, -200, right.bounds.size.width, right.bounds.size.height);
-    
-    //    UIImageView *blackBack = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"blackBack"]];
-    //    blackBack.frame = CGRectMake(100, 0, 120, [UIScreen mainScreen].bounds.size.height);
-    //    [self.view addSubview:blackBack];
-    
-    [UIView animateWithDuration:5.0f
-                          delay:0.0f
-                        options:UIViewAnimationOptionCurveLinear | UIViewAnimationOptionRepeat
-                     animations:^{
-                         // アニメーションをする処理
-                         left.frame = CGRectMake(left.bounds.size.width * -1, 45, left.bounds.size.width, left.bounds.size.height);
-                         right.frame = CGRectMake(100, 45, right.bounds.size.width, right.bounds.size.height);
-                         // アニメーションをする処理
-                         left.transform = CGAffineTransformMakeScale(1.3, 1.3);
-                         right.transform = CGAffineTransformMakeScale(1.3, 1.3);
-                     } completion:^(BOOL finished) {
-                         // アニメーションが終わった後実行する処理
-                     }];
+    Create3DDimension *dim = [[Create3DDimension alloc] init];
+    [dim createGround:self.view groundImage:[UIImage imageNamed:@"Ground"] rightWallImage:[UIImage imageNamed:@"left"] leftWallImage:[UIImage imageNamed:@"right"] roadHeight:self.view.center.y + 150 roadRadian:0.35 * M_PI wallRadian:0.33 * M_PI moveSpeed:60 okuyuki:200];
+//    [dim createTargets:self.view tagetRadian:0.525 * M_PI moveSpeed:60 okuyuki:1000];
+
 }
 
 - (void)didReceiveMemoryWarning {
@@ -104,6 +71,38 @@
         }
         
     };
+}
+
+- (void) didFinishLoadInterstitialAdWithStatus:(NADInterstitialStatusCode)status
+{
+    switch ( status )
+    {
+        case SUCCESS:
+            NSLog(@"広告のロードに成功しました。");
+            //TODO: デバッグ終わり次第元に戻す　[[NADInterstitial sharedInstance] showAd];
+            break;
+        case INVALID_RESPONSE_TYPE:
+            NSLog(@"不正な広告タイプです。");
+            break;
+        case FAILED_AD_REQUEST:
+            NSLog(@"抽選リクエストに失敗しました。");
+            break;
+        case FAILED_AD_DOWNLOAD:
+            NSLog(@"広告のロードに失敗しました。");
+            break;
+    }
+}
+- (void) didClickWithType:(NADInterstitialClickType)type
+{
+    switch ( type )
+    {
+        case DOWNLOAD:
+            NSLog(@"ダウンロードボタンがクリックされました。");
+            break;
+        case CLOSE:
+            NSLog(@"閉じるボタンあるいは広告範囲外の領域がクリックされました。");
+            break;
+    }
 }
 
 @end

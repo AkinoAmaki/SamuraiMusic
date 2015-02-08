@@ -10,11 +10,14 @@
 #import <CoreData/CoreData.h>
 #import "EditStageSelect.h"
 #import "FileHelper.h"
+#import "NADInterstitial.h"
 
 
 @interface AppDelegate : UIResponder <UIApplicationDelegate>{
     UINavigationController *naviController;
     EditStageSelect *editStageSelect;
+    NSUserDefaults *ud;
+    int firstLaunch;
 }
 
 

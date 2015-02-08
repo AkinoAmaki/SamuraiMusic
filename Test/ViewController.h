@@ -9,8 +9,12 @@
 #import <UIKit/UIKit.h>
 #import "Icon.h"
 #import <GameKit/GameKit.h>
+#import "NADView.h"
+#import "NADInterstitial.h"
+#import "Create3DDimension.h"
 
-@interface ViewController : UIViewController<NSCoding, GKGameCenterControllerDelegate>{
+
+@interface ViewController : UIViewController<NSCoding, GKGameCenterControllerDelegate,NADInterstitialDelegate>{
     float singleTapGestureDuration;
     float panGestureDuration;
     float longPressGestureDuration;

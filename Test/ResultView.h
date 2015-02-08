@@ -11,8 +11,9 @@
 #import "UILabel+RandomInt.h"
 #import "AAButton.h"
 #import <GameKit/GameKit.h>
+#import "NADIconLoader.h"
 
-@interface ResultView : UIViewController<GKGameCenterControllerDelegate>{
+@interface ResultView : UIViewController<GKGameCenterControllerDelegate,NADIconLoaderDelegate>{
     UILabel *scoreLabel;
     UIImageView *pggb; //Perfect Great Good Bad の回数を表示する
     UIImageView *hantei;
@@ -29,6 +30,15 @@
     UILabel *greatNum;     //greatの回数
     UILabel *goodNum;      //goodの回数
     UILabel *badNum;       //badの回数
+
+    NADIconLoader* iconLoader;//アイコン型広告用の変数
+    NADIconView* iconView1;    //アイコン型広告用の変数
+    NADIconView* iconView2;    //アイコン型広告用の変数
+    NADIconView* iconView3;    //アイコン型広告用の変数
+    NADIconView* iconView4;    //アイコン型広告用の変数
+    NADIconView* iconView5;    //アイコン型広告用の変数
+    NADIconView* iconView6;    //アイコン型広告用の変数
+    
 }
 
 @property (nonatomic) int score;

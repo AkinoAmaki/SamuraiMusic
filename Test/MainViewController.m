@@ -85,7 +85,7 @@
     //再生対象の音楽ファイルのパスを指定する
     //Documentsファイルを指定
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-    NSString *DocumentsDirPath = [paths objectAtIndex:0];
+    NSString *DocumentsDirPath = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"music"];
     //再生曲名及び拡張子を指定
     //現状、拡張子は全てm4aに強制変換しているので、m4aに変更する
     extension = @"m4a";
@@ -370,7 +370,7 @@
         }
     }
     
-    [NSTimer scheduledTimerWithTimeInterval:animationDuration - 0.1
+    [NSTimer scheduledTimerWithTimeInterval:animationDuration - 0.05
                                      target:self
                                    selector:@selector(mbAnimationToNil:)
                                    userInfo:userInfo
@@ -384,18 +384,27 @@
         case 1:
             if ([mbAnimation1 isAnimating]) {
                 [self popUpHanteiKekka:mbAnimation1 Kekka:Miss];
+                combo = 0;
+                missNum++;
+                NSLog(@"Miss! タッチしませんでした");
             }
             mbAnimation1 = nil;
             break;
         case 2:
             if ([mbAnimation2 isAnimating]) {
                 [self popUpHanteiKekka:mbAnimation2 Kekka:Miss];
+                combo = 0;
+                missNum++;
+                NSLog(@"Miss! タッチしませんでした");
             }
             mbAnimation2 = nil;
             break;
         case 3:
             if ([mbAnimation3 isAnimating]) {
                 [self popUpHanteiKekka:mbAnimation3 Kekka:Miss];
+                combo = 0;
+                missNum++;
+                NSLog(@"Miss! タッチしませんでした");
             }
             mbAnimation3 = nil;
             break;
@@ -420,7 +429,7 @@
 - (void)handleSingleTap:(id)sender {
     UIWindow *window = [[[UIApplication sharedApplication] delegate] window];
     CGPoint point = [sender locationOfTouch:0 inView:window];
-    NSLog(@"Tap Point: %@", NSStringFromCGPoint(point));
+//    NSLog(@"Tap Point: %@", NSStringFromCGPoint(point));
     CGPoint p = [self accuracyOfTapGesture:CGPointMake(point.x, point.y)];
     if(p.x == 0 && p.y == 0){
         NSLog(@"失敗");
@@ -498,38 +507,38 @@
     NSTimeInterval interval = [now timeIntervalSinceDate:musicStartTime]; //現在時刻とスタート時点の時刻を比較
     float gestureStartTime;
     
-    //設定した閾値から、タップ成功範囲とタイミングを設定
+    //設定した閾値から、タップ成功範囲とタイミングを設定。また、タッチされたアニメーションを消去する
     Icon *icon = [Icon new];
     if (CGRectContainsPoint(mbAnimation1.frame, point)) {
-        [mbAnimation1 stopAnimating];
+        [mbAnimation1 removeFromSuperview];
         icon = tapMusicArray[mbAnimation1.tag - 1];
         if (icon.iconType == 1) {
             cg = CGPointMake(mbAnimation1.frame.origin.x, mbAnimation1.frame.origin.y);
             gestureStartTime = icon.startTime;
-            [self judgeTouchTiming:mbAnimation1 cg:cg interval:interval gestureStartTime:gestureStartTime];
+            cg = [self judgeTouchTiming:mbAnimation1 cg:cg interval:interval gestureStartTime:gestureStartTime];
         }
     }else if (CGRectContainsPoint(mbAnimation2.frame, point)){
-        [mbAnimation2 stopAnimating];
+        [mbAnimation2 removeFromSuperview];
         icon = tapMusicArray[mbAnimation2.tag - 1];
         if (icon.iconType == 1) {
             cg = CGPointMake(mbAnimation2.frame.origin.x, mbAnimation2.frame.origin.y);
             gestureStartTime = icon.startTime;
-            [self judgeTouchTiming:mbAnimation2 cg:cg interval:interval gestureStartTime:gestureStartTime];
+            cg = [self judgeTouchTiming:mbAnimation2 cg:cg interval:interval gestureStartTime:gestureStartTime];
         }
     }else if (CGRectContainsPoint(mbAnimation3.frame, point)){
         icon = tapMusicArray[mbAnimation3.tag - 1];
-        [mbAnimation3 stopAnimating];
+        [mbAnimation3 removeFromSuperview];
         if (icon.iconType == 1) {
             cg = CGPointMake(mbAnimation3.frame.origin.x, mbAnimation3.frame.origin.y);
             gestureStartTime = icon.startTime;
-            [self judgeTouchTiming:mbAnimation3 cg:cg interval:interval gestureStartTime:gestureStartTime];
+            cg = [self judgeTouchTiming:mbAnimation3 cg:cg interval:interval gestureStartTime:gestureStartTime];
         }
     }else{
         NSLog(@"タップした座標が合っていない");
-        NSLog(@"x:%f y:%f",mbAnimation1.frame.origin.x,mbAnimation1.frame.origin.y);
         return cg;
     }
     
+    NSLog(@"pointX:%f pointY:%f",cg.x,cg.y);
     return cg;
 }
 
@@ -546,21 +555,21 @@
     
     //設定した閾値から、タップ成功範囲とタイミングを設定
     if (CGRectContainsPoint(mbAnimation1.frame, point)) {
-        [mbAnimation1 stopAnimating];
+        [mbAnimation1 removeFromSuperview];
         p = [tapMusicArray objectAtIndex:(mbAnimation1.tag - 1)]; //判定対象のLongPressGestureを取得
         if([p isKindOfClass:[PanGesture class]]){
             cg = CGPointMake(mbAnimation1.frame.origin.x, mbAnimation1.frame.origin.y);
             [self judgeTouchTiming:mbAnimation1 cg:cg interval:interval gestureStartTime:gestureStartTime];
         }
     }else if (CGRectContainsPoint(mbAnimation2.frame, point)){
-        [mbAnimation2 stopAnimating];
+        [mbAnimation2 removeFromSuperview];
         p = [tapMusicArray objectAtIndex:(mbAnimation2.tag - 1)]; //判定対象のLongPressGestureを取得
         if([p isKindOfClass:[PanGesture class]]){
             cg = CGPointMake(mbAnimation2.frame.origin.x, mbAnimation2.frame.origin.y);
             [self judgeTouchTiming:mbAnimation2 cg:cg interval:interval gestureStartTime:gestureStartTime];
         }
     }else if (CGRectContainsPoint(mbAnimation3.frame, point)){
-        [mbAnimation3 stopAnimating];
+        [mbAnimation3 removeFromSuperview];
         p = [tapMusicArray objectAtIndex:(mbAnimation3.tag - 1)]; //判定対象のLongPressGestureを取得
         if([p isKindOfClass:[PanGesture class]]){
             cg = CGPointMake(mbAnimation3.frame.origin.x, mbAnimation3.frame.origin.y);
@@ -605,21 +614,21 @@
     float gestureStartTime = l.startTime;
     //設定した閾値から、タップ成功範囲とタイミングを設定
     if (CGRectContainsPoint(mbAnimation1.frame, point)) {
-        [mbAnimation1 stopAnimating];
+        [mbAnimation1 removeFromSuperview];
         l = [tapMusicArray objectAtIndex:(mbAnimation1.tag - 1)]; //判定対象のLongPressGestureを取得
         if([l isKindOfClass:[LongPressGesture class]]){
            cg = CGPointMake(mbAnimation1.frame.origin.x, mbAnimation1.frame.origin.y);
            [self judgeTouchTiming:mbAnimation1 cg:cg interval:interval gestureStartTime:gestureStartTime];
         }
     }else if (CGRectContainsPoint(mbAnimation2.frame, point)){
-        [mbAnimation2 stopAnimating];
+        [mbAnimation2 removeFromSuperview];
         l = [tapMusicArray objectAtIndex:(mbAnimation2.tag - 1)]; //判定対象のLongPressGestureを取得
         if([l isKindOfClass:[LongPressGesture class]]){
             cg = CGPointMake(mbAnimation2.frame.origin.x, mbAnimation2.frame.origin.y);
             [self judgeTouchTiming:mbAnimation2 cg:cg interval:interval gestureStartTime:gestureStartTime];
         }
     }else if (CGRectContainsPoint(mbAnimation3.frame, point)){
-        [mbAnimation3 stopAnimating];
+        [mbAnimation3 removeFromSuperview];
         l = [tapMusicArray objectAtIndex:(mbAnimation3.tag - 1)]; //判定対象のLongPressGestureを取得
         if([l isKindOfClass:[LongPressGesture class]]){
             cg = CGPointMake(mbAnimation3.frame.origin.x, mbAnimation3.frame.origin.y);
@@ -654,7 +663,7 @@
     return cg;
 }
 
-- (void)judgeTouchTiming:(MBAnimationView *)MBAnimation cg:(CGPoint)cg interval:(NSTimeInterval)interval gestureStartTime:(float)gestureStartTime{
+- (CGPoint)judgeTouchTiming:(MBAnimationView *)MBAnimation cg:(CGPoint)cg interval:(NSTimeInterval)interval gestureStartTime:(float)gestureStartTime{
     float  thresholdOfTimeInterval_Perfect = 0.25; //タップしたタイミングの曖昧さの閾値を設定(Perfect)
     float  thresholdOfTimeInterval_Great = 0.35; //タップしたタイミングの曖昧さの閾値を設定(Great)
     float  thresholdOfTimeInterval_Good = 0.50; //タップしたタイミングの曖昧さの閾値を設定(Good)
@@ -665,24 +674,28 @@
         perfectNum++;
         [self popUpHanteiKekka:MBAnimation Kekka:Perfect];
         [self caliculateScore:1];
+        return cg;
     }else if ((interval - gestureStartTime) >= thresholdOfTimeInterval_Great * -1 && (interval - gestureStartTime) <= thresholdOfTimeInterval_Great) {
         NSLog(@"Great!  :%lf",(interval - gestureStartTime));
         combo++;
         greatNum++;
         [self popUpHanteiKekka:MBAnimation Kekka:Great];
         [self caliculateScore:2];
+        return cg;
     }else if ((interval - gestureStartTime) >= thresholdOfTimeInterval_Good * -1 && (interval - gestureStartTime) <= thresholdOfTimeInterval_Good) {
         NSLog(@"Good!   :%lf",(interval - gestureStartTime));
         combo++;
         goodNum++;
         [self popUpHanteiKekka:MBAnimation Kekka:Good];
         [self caliculateScore:3];
+        return cg;
     }else{
+        NSLog(@"通った");
         NSLog(@"Miss!   :%lf",(interval - gestureStartTime));
-        cg = CGPointZero;
         missNum++;
         [self popUpHanteiKekka:MBAnimation Kekka:Miss];
         combo = 0;
+        return CGPointZero;
     }
 }
 

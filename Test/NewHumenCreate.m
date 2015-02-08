@@ -51,7 +51,6 @@
             
             //1section分のデータができたので、全体テーブル用の配列にセット
             [playListSongs setObject:sectionSongs forKey:[playlist valueForProperty: MPMediaPlaylistPropertyName]];
-            
         }
     }
     return self;
@@ -163,6 +162,15 @@
 
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
+    // セルの選択を解除する
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    [self createHumen:indexPath];
+}
+
+- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
+}
+
+- (void)createHumen:(NSIndexPath *)indexPath{
     //使える拡張子を限定し、それ以外を弾く。（とりあえずいまのところmp3とm4aのみ指定している。）
     //曲名および拡張子を格納
     kyokumei = [[[playListSongs objectForKey:[sectionPlayList objectAtIndex:indexPath.section]]objectAtIndex:indexPath.row]objectAtIndex:1];
@@ -176,7 +184,7 @@
                                                presetName:AVAssetExportPresetAppleM4A];
         exportSession.outputFileType = [[exportSession supportedFileTypes] objectAtIndex:0];
         
-        NSString *docDir = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
+        NSString *docDir = [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingPathComponent:@"music"];
         NSString *filePath = [docDir stringByAppendingPathComponent:[UniqueFileName getUniqueFileNameInDocumentDirectory:kyokumei type:@"m4a"]];
         exportSession.outputURL = [NSURL fileURLWithPath:filePath];
         
@@ -185,7 +193,7 @@
         NSLog(@"パス　：%@", filePath);
         
         [exportSession exportAsynchronouslyWithCompletionHandler:^{
-        
+            
             if (exportSession.status == AVAssetExportSessionStatusCompleted) {
                 NSLog(@"export session completed");
             } else {
@@ -203,23 +211,32 @@
         while(!finished) {
             [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.5]];
         }
-
+        
         [SVProgressHUD dismiss];
         //新規作成したステージをstagesに格納
         NSMutableArray *nullArray = [[NSMutableArray alloc] init];
         NSData *data = [Icon serialize:nullArray];
         
-//        ExceptionArea *exception = [[ExceptionArea alloc] initWithData:CGRectMake(0, [UIScreen mainScreen].bounds.size.height - 60, [UIScreen mainScreen].bounds.size.width, 60) startTime:0 endTime:3600 iconTagNumber:1];
-//        NSMutableArray *dataArray = [[NSMutableArray alloc] initWithObjects:exception, nil];
-//        NSData *data2 = [icon serialize:dataArray];
-//        
-//        CGRect rec = exception.exceptionArea;
-//        NSLog(@"x1:%f y1:%f x2:%f y2:%f",rec.origin.x,rec.origin.y,rec.size.width,rec.size.height);
+        //        ExceptionArea *exception = [[ExceptionArea alloc] initWithData:CGRectMake(0, [UIScreen mainScreen].bounds.size.height - 60, [UIScreen mainScreen].bounds.size.width, 60) startTime:0 endTime:3600 iconTagNumber:1];
+        //        NSMutableArray *dataArray = [[NSMutableArray alloc] initWithObjects:exception, nil];
+        //        NSData *data2 = [icon serialize:dataArray];
+        //
+        //        CGRect rec = exception.exceptionArea;
+        //        NSLog(@"x1:%f y1:%f x2:%f y2:%f",rec.origin.x,rec.origin.y,rec.size.width,rec.size.height);
         
-        NSMutableArray *tempArray = [[NSMutableArray alloc] initWithObjects:@"humenxxx", kyokumei, kakutyoushi, data, data, nil];
+        NSString *scoreBoardName = [NSString stringWithFormat:@"%@"];
+        NSMutableArray *tempArray = [[NSMutableArray alloc] initWithObjects:kyokumei, kyokumei, kakutyoushi, data, data, nil];
         [stages addObject:tempArray];
         [[NSUserDefaults standardUserDefaults] setObject:stages forKey:@"stageArray"];
         [[NSUserDefaults standardUserDefaults] synchronize];
+        
+        //プロパティリストに譜面名・譜面画像・譜面画像名を保存（譜面画像・譜面画像名は現在未使用のためnilを入れてある）
+        NSString *dirPath = [[[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingPathComponent:@"propertyList"] stringByAppendingPathComponent:@"musicName.plist"];
+        NSMutableArray *array = [[NSMutableArray alloc] initWithContentsOfFile:dirPath];
+        [array insertObject:[[NSDictionary alloc] initWithObjectsAndKeys:[NSString stringWithFormat:@"%@(%@)",kyokumei,kyokumei], @"title", nil,@"image_name",nil,@"image",nil] atIndex:[array count] - 1]; //一番後ろの要素は常に「新規作成」ボタンのためのデータなので、後ろから２番目にデータ挿入する
+        [array writeToFile:dirPath atomically:YES];
+        
+        
         
         //stageEditViewControllerをモーダルビューで表示
         stageEditViewController = [[StageEditViewController alloc] init];
@@ -234,13 +251,6 @@
         UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"使用不可" message:[NSString stringWithFormat:@"%@の拡張子は使用できません。使用できる拡張子はmp3及びm4aです",kakutyoushi] delegate:self cancelButtonTitle:nil otherButtonTitles:@"選びなおす", nil];
         [alert show];
     }
-    
-     // セルの選択を解除する
-    [tableView deselectRowAtIndexPath:indexPath animated:YES];
-}
-
-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
-
 }
 
 

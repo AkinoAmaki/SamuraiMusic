@@ -39,10 +39,15 @@
     
     stages = [[NSUserDefaults standardUserDefaults] objectForKey:@"stageArray"];
 
-    UIBarButtonItem *btn = [[UIBarButtonItem alloc]
-                             initWithBarButtonSystemItem:UIBarButtonSystemItemReply
-                             target:self action:@selector(returnToMainView)];
-    self.navigationItem.leftBarButtonItem = btn;
+    UIButton *btn = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    btn.frame = CGRectMake(10, 10, 100, 30);
+    [btn setTitle:@"押してね" forState:UIControlStateNormal];
+    [btn setTitle:@"ぽち" forState:UIControlStateHighlighted];
+    [btn setTitle:@"押せません" forState:UIControlStateDisabled];
+    // ボタンがタッチダウンされた時にhogeメソッドを呼び出す
+    [btn addTarget:self action:@selector(returnToMainView)
+  forControlEvents:UIControlEventTouchDown];
+    [self.view addSubview:btn];
 }
 
 - (void)returnToMainView{

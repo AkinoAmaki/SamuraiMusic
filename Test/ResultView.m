@@ -71,6 +71,39 @@
     [self.view addSubview:pggb];
     [self levelHantei];
     self.view.backgroundColor = [UIColor whiteColor];
+    
+    
+    //アイコン型広告の実装
+    // NADIconViewクラスの生成
+    iconView1 = [[NADIconView alloc] initWithFrame:CGRectMake(0, [UIScreen mainScreen].bounds.size.height - 255, 75, 75)];
+    iconView2 = [[NADIconView alloc] initWithFrame:CGRectMake(0, [UIScreen mainScreen].bounds.size.height - 180, 75, 75)];
+    iconView3 = [[NADIconView alloc] initWithFrame:CGRectMake(0, [UIScreen mainScreen].bounds.size.height - 105 , 75, 75)];
+    iconView4 = [[NADIconView alloc] initWithFrame:CGRectMake([UIScreen mainScreen].bounds.size.width - 75, [UIScreen mainScreen].bounds.size.height - 255, 75, 75)];
+    iconView5 = [[NADIconView alloc] initWithFrame:CGRectMake([UIScreen mainScreen].bounds.size.width - 75, [UIScreen mainScreen].bounds.size.height - 180, 75, 75)];
+    iconView6 = [[NADIconView alloc] initWithFrame:CGRectMake([UIScreen mainScreen].bounds.size.width - 75, [UIScreen mainScreen].bounds.size.height - 105, 75, 75)];
+    // NADIconViewの配置
+    [self.view addSubview:iconView1];
+    [self.view addSubview:iconView2];
+    [self.view addSubview:iconView3];
+    [self.view addSubview:iconView4];
+    [self.view addSubview:iconView5];
+    [self.view addSubview:iconView6];
+    // NADIconLoaderクラスの生成
+    iconLoader = [[NADIconLoader alloc] init];
+    // ログ出力の指定
+    [iconLoader setIsOutputLog:YES];
+    // NADIconLoaderへNADIconViewを追加
+    [iconLoader addIconView:iconView1];
+    [iconLoader addIconView:iconView2];
+    [iconLoader addIconView:iconView3];
+    [iconLoader addIconView:iconView4];
+    [iconLoader addIconView:iconView5];
+    [iconLoader addIconView:iconView6];
+    // APIキーとSPOTIDを設定
+    [iconLoader setNendID:@"2349edefe7c2742dfb9f434de23bc3c7ca55ad22"
+                   spotID:@"101281"];
+    // デリゲートオブジェクトの設定
+    [iconLoader setDelegate:self];
 }
 
 - (void)viewDidAppear:(BOOL)animated{
@@ -129,6 +162,9 @@
                                               [self.view addSubview:leaderBoard];
                                               [leaderBoard addTarget:self action:@selector(showRanking)
                                                                forControlEvents:UIControlEventTouchUpInside];
+                                              
+                                              // 広告のロード
+                                              [iconLoader load];
                                           }];
 
                      }];
@@ -148,6 +184,16 @@
             }
         }];
     }
+}
+
+- (void)viewWillDisappear:(BOOL)animated{
+    //画面が隠れたら、アイコン型広告の定期ロードを中断
+    [iconLoader pause];
+}
+
+- (void)viewWillAppear:(BOOL)animated{
+    //画面が表示されたら、アイコン型広告の定期ロードを再開
+    [iconLoader resume];
 }
 
 - (void)returnToStageSelect:(id)sender{
@@ -211,5 +257,36 @@
     [self dismissViewControllerAnimated:YES completion:nil];
 }
 
+//アイコン型広告がロード完了した際に呼ばれるメソッド
+-(void)nadIconLoaderDidFinishLoad:(NADIconLoader *)iconLoader{
+    NSLog(@"アイコン型広告のロードが完了しました");
+}
+
+//アイコン型広告がクリックされた際に呼ばれるメソッド
+-(void)nadIconLoaderDidClickAd:(NADIconLoader *)iconLoader
+                   nadIconView:(NADIconView *)nadIconView{
+    NSLog(@"アイコン型広告がクリックされました");
+}
+
+//アイコン型広告が受信できた際に呼ばれるメソッド
+-(void)nadIconLoaderDidReceiveAd:(NADIconLoader *)iconLoader
+                     nadIconView:(NADIconView *)nadIconView{
+    NSLog(@"アイコン型広告を受信しました");
+}
+
+//広告受信時にエラーが出た場合の対応
+-(void)nadIconLoaderDidFailToReceiveAd:(NADIconLoader *)nadIconLoader
+                           nadIconView:(NADIconView *)nadIconView
+{
+    NSLog(@"広告受信時にエラーが発生しました。");
+    // エラーごとに分岐する
+    NSError* error = nadIconLoader.error;
+    NSString* domain = error.domain;
+    int errorCode = error.code;
+    // isOutputLog = NOでも、domain を利用してアプリ側で任意出力が可能
+    NSLog(@"log %d", nadIconLoader.isOutputLog);
+    NSLog(@"%@",[NSString stringWithFormat: @"code=%d, message=%@",
+                 errorCode, domain]);
+}
 
 @end

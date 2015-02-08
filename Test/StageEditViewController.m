@@ -166,7 +166,7 @@
     //再生対象の音楽ファイルのパスを指定する
         //Documentsファイルを指定
         NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-        NSString *DocumentsDirPath = [paths objectAtIndex:0];
+        NSString *DocumentsDirPath = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"music"];
         //再生曲名及び拡張子を指定
             //現状、拡張子は全てm4aに強制変換しているので、m4aに変更する
             extension = @"m4a";
@@ -211,17 +211,17 @@
 }
 
 - (IBAction)saveIcon:(id)sender{
-    //ID入力方式による対戦相手の指定の実装
     humenNameAlertView = [[UIAlertView alloc] initWithTitle:@"譜面の保存" message:@"保存する譜面名を入力してください" delegate:self cancelButtonTitle:@"キャンセル" otherButtonTitles:@"譜面を保存する", nil];
     humenNameAlertView.alertViewStyle = UIAlertViewStylePlainTextInput;
     humenNameAlertView.frame = CGRectMake(0, 50, 300, 200);
     humenNameTextField = [[UITextField alloc] initWithFrame:CGRectMake(12, 45, 260, 25)];
+    humenNameTextField = [humenNameAlertView textFieldAtIndex:0];
     humenNameTextField.placeholder = @"譜面名を入力";
-    humenNameTextField.text = [NSString stringWithFormat:@"%@",[stages objectAtIndex:0]];
+    humenNameTextField.text = [NSString stringWithFormat:@"%@",[[stages objectAtIndex:stageNumber] objectAtIndex:0]];
     humenNameTextField.delegate = self;
+    humenNameTextField.clearButtonMode = UITextFieldViewModeWhileEditing;
     [humenNameTextField setKeyboardType:UIKeyboardTypeNumbersAndPunctuation];
     [humenNameTextField reloadInputViews];
-    humenNameTextField = [humenNameAlertView textFieldAtIndex:0];
     [humenNameAlertView show];
 }
 
@@ -249,7 +249,19 @@
             [[NSUserDefaults standardUserDefaults] synchronize];
             NSLog(@"完成");
             
-            [self.presentingViewController.presentingViewController dismissViewControllerAnimated:NO completion:nil];
+            //プロパティリストに譜面名・譜面画像・譜面画像名を保存（譜面画像・譜面画像名は現在未使用のためnilを入れてある）
+            NSString *dirPath = [[[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingPathComponent:@"propertyList"] stringByAppendingPathComponent:@"musicName.plist"];
+            NSMutableArray *array = [[NSMutableArray alloc] initWithContentsOfFile:dirPath];
+            [array replaceObjectAtIndex:stageNumber withObject:[[NSDictionary alloc] initWithObjectsAndKeys:[NSString stringWithFormat:@"%@(%@)",humenNameTextField.text,kyokumei], @"title", nil,@"image_name",nil,@"image",nil]];
+            [array writeToFile:dirPath atomically:YES];
+            
+            //ビューを閉じる
+            //新規譜面ならNewHumenCreateビューを通しているので一つ多くビューを閉じる。
+            if ([stages count] == (stageNumber + 1)) {
+                [self.presentingViewController.presentingViewController.presentingViewController dismissViewControllerAnimated:NO completion:nil];
+            }else{
+                [self.presentingViewController.presentingViewController dismissViewControllerAnimated:NO completion:nil];
+            }
         }
         default:
             break;
