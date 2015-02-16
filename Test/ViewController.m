@@ -36,17 +36,12 @@
     //インタースティシャル広告のデリゲートの設定
     [NADInterstitial sharedInstance].delegate = self;
     
-    UILabel *l = [[UILabel alloc] initWithFrame:CGRectMake(100, 100, 200, 50)];
-    [self.view addSubview:l];
-    
-    [self backScreenTest];
+//    [self backScreenTest];
 }
 
 - (void)backScreenTest{
-    Create3DDimension *dim = [[Create3DDimension alloc] init];
+    dim = [[Create3DDimension alloc] init];
     [dim createGround:self.view groundImage:[UIImage imageNamed:@"Ground"] rightWallImage:[UIImage imageNamed:@"left"] leftWallImage:[UIImage imageNamed:@"right"] roadHeight:self.view.center.y + 150 roadRadian:0.35 * M_PI wallRadian:0.33 * M_PI moveSpeed:60 okuyuki:200];
-//    [dim createTargets:self.view tagetRadian:0.525 * M_PI moveSpeed:60 okuyuki:1000];
-
 }
 
 - (void)didReceiveMemoryWarning {

@@ -19,12 +19,15 @@
     CATransform3D baseTrans;
     CATransform3D baseTrans2;
     CATransform3D baseTrans3;
+    NSTimer *moveTimer;
+    int test;
 }
 
 - (void)createGround:(UIView *)view groundImage:(UIImage *)groundImage rightWallImage:(UIImage *)rightWallImage leftWallImage:(UIImage *)leftWallImage roadHeight:(int)roadHeight roadRadian:(float)roadRadian wallRadian:(float)wallRadian moveSpeed:(float)moveSpeed okuyuki:(float)okuyuki;
 - (void)move:(NSTimer*)sender;
 - (void)createTargets:(UIView *)view tagetRadian:(float)tagetRadian  moveSpeed:(float)moveSpeed okuyuki:(float)okuyuki;
 - (void)move2:(NSTimer*)sender;
+- (void)pauseAnimation;
 
 
 @end

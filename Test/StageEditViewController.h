@@ -44,6 +44,10 @@
     NSString *kyokumei;                 //再生する曲の曲名
     NSString *kakutyoushi;              //再生する曲の拡張子
     Icon *tempIcon;
+    
+    MBAnimationView *mbAnimation1;      //表示するアイコンのアニメーション
+    MBAnimationView *mbAnimation2;
+    MBAnimationView *mbAnimation3;
 }
 @property (nonatomic, retain) NSMutableArray *iconArray;              //作成したアイコンを格納する配列
 @property (nonatomic, retain) NSMutableArray *exceptionAreaArray;     //例外エリアを格納する配列

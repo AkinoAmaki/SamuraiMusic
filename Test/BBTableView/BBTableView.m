@@ -220,5 +220,4 @@
     return [_dataSourceInterceptor.receiver tableView:tableView cellForRowAtIndexPath:MORPHED_INDEX_PATH(indexPath)];
 }
 
-
 @end

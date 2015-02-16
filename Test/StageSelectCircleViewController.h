@@ -10,10 +10,15 @@
 #import "BBTableView.h"
 #import "MainViewController.h"
 
-@interface StageSelectCircleViewController : UIViewController<UITableViewDataSource,UIScrollViewDelegate>{
+@interface StageSelectCircleViewController : UIViewController<UITableViewDataSource,UIScrollViewDelegate,UITableViewDelegate>{
     IBOutlet BBTableView *mTableView;
     NSMutableArray *mDataSource;
     MainViewController *mainViewController;
+    
+    //ボタンタップ時の効果音
+    CFBundleRef mainBundle;
+    CFURLRef tapSoundURL;
+    SystemSoundID tapSoundID;
 }
 @property(nonatomic, retain) NSMutableArray *stages; //全ての譜面名、曲名、曲の拡張子、譜面本体を収めた配列を格納
 

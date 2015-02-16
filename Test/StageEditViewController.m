@@ -77,6 +77,24 @@
     [playButton addTarget:self
                    action:@selector(playAudio:) forControlEvents:UIControlEventTouchUpInside];
     
+    
+    UIButton *okuri = [[UIButton alloc] initWithFrame:CGRectMake(0, 0, 30, 30)];
+    okuri.center = CGPointMake([UIScreen mainScreen].bounds.size.width / 2, [UIScreen mainScreen].bounds.size.height-100);
+    [allUtilityView addSubview:okuri];
+    [okuri setBackgroundImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"start" ofType:@"png"]] forState:UIControlStateNormal];  // 画像をセットする
+    // ボタンが押された時に指定したメソッドを呼び出す
+    [okuri addTarget:self
+              action:@selector(komaokuri) forControlEvents:UIControlEventTouchUpInside];
+    
+    UIButton *modoshi = [[UIButton alloc] initWithFrame:CGRectMake(0, 0, 30, 30)];
+    modoshi.center = CGPointMake([UIScreen mainScreen].bounds.size.width / 2, [UIScreen mainScreen].bounds.size.height-150);
+    [allUtilityView addSubview:modoshi];
+    [modoshi setBackgroundImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"start" ofType:@"png"]] forState:UIControlStateNormal];  // 画像をセットする
+    // ボタンが押された時に指定したメソッドを呼び出す
+    [modoshi addTarget:self
+              action:@selector(komamodoshi) forControlEvents:UIControlEventTouchUpInside];
+    
+    
     //再生のシークバーを設置
     timeSlider = [[UISlider alloc] initWithFrame:CGRectMake(0, 0, 200, 10)];
     timeSlider.center = CGPointMake([UIScreen mainScreen].bounds.size.width / 2, [UIScreen mainScreen].bounds.size.height - 25);
@@ -288,14 +306,38 @@
 
 }
 
+//音楽のコマ送りを実装
+-(void)komaokuri{
+    [self upDateSlider:nil];
+    [audio play];
+    [NSTimer scheduledTimerWithTimeInterval:0.1
+                                     target:self
+                                   selector:@selector(playAudio:)
+                                   userInfo:nil
+                                    repeats:NO];
+}
+
+//音楽のコマ戻しを実装
+-(void)komamodoshi{
+    audio.currentTime -= 0.2;
+    [self upDateSlider:nil];
+    [audio play];
+    [NSTimer scheduledTimerWithTimeInterval:0.1
+                                     target:self
+                                   selector:@selector(playAudio:)
+                                   userInfo:nil
+                                    repeats:NO];
+}
+
 //タイムスライダーの表示をアップデートする
 -(void)upDateSlider:(NSTimer*)timer{
-    if([audio isPlaying]){
+//    if([audio isPlaying]){
         timeSlider.value = audio.currentTime;
         zenkai = audio.currentTime;
         [self updateLabel];
         [self refleshIcon:YES];
-    }
+//    }
+    NSLog(@"count:%d",[self.view.subviews count]);
 }
 
 //ハンドでタイムスライダーの値を変更するたびに呼び出される。edit画面で貼り付けたアイコンを全て削除する。また、シークした先にアニメーションのビューがあればそれを表示させる
@@ -326,6 +368,7 @@
         for (int i = 0; i < [iconArray count]; i++) {
             Icon *icon = [iconArray objectAtIndex:i];
             if (![icon isEqual:[NSNull null]] && icon.startTime <= audio.currentTime && icon.endTime >= audio.currentTime && [animatingNowIconArray indexOfObject:icon] == NSNotFound) {
+                
                 MBAnimationView *mb = [[MBAnimationView alloc] init];
                 mb.userInteractionEnabled = YES;
                 mb.tag = icon.iconTagNumber;
@@ -334,6 +377,7 @@
                     case 1:
                         //シングルタップの場合
                     {
+                        NSLog(@"kita");
                         [mb setAnimationImage:@"pipo-btleffect007.png" :120 :120 :14];
                         mb.animationDuration = singleTapAnimationDuration;
                         [self createTapGestureRecognizers:mb];
@@ -342,6 +386,7 @@
                     case 2:
                         //スワイプの場合
                     {
+                        NSLog(@"kita");
                         [mb setAnimationImage:@"PanGesture.png" :120 :120 :14];
                         mb.animationDuration = panAnimationDuration;
                         [self createPanGestureRecognizers:mb];
@@ -351,6 +396,7 @@
                     case 3:
                         //ロングプレスの場合
                     {
+                        NSLog(@"kita");
                         [mb setAnimationImage:@"LongPressGesture.png" :120 :120 :14];
                         mb.animationDuration = longPressAnimationDuration;
                         [self createLongPressGestureRecognizers:mb];
@@ -361,7 +407,14 @@
                 }
                 
                 mb.frame = CGRectMake(icon.centerPoint.x - 60, icon.centerPoint.y - 60, 120, 120);
+                int x = [self.view.subviews count];
                 [self.view addSubview:mb];
+                int y = [self.view.subviews count];
+                if (x +1 == y) {
+                    NSLog(@"挿入OK");
+                }else{
+                    NSLog(@"挿入ミス");
+                }
                 [mb startAnimating];
             }
         }
@@ -682,12 +735,11 @@
     }else{
         NSLog(@"成功");
         MBAnimationView *mb = [[MBAnimationView alloc] init];
-        [mb setAnimationImage:@"pipo-btleffect078.png" :120 :120 :14];
+        [mb setAnimationImage:@"tap.png" :160 :120 :9];
         mb.frame = CGRectMake(p.x, p.y, 120, 120);
         mb.animationDuration = 0.5;
         [self.view addSubview:mb];
         [mb startAnimating];
-        
     }
 }
 
@@ -714,7 +766,6 @@
             mb.animationDuration = 0.5;
             [self.view addSubview:mb];
             [mb startAnimating];
-            
         }
     }
 }
@@ -738,9 +789,9 @@
         }else{
             NSLog(@"成功");
             MBAnimationView *mb = [[MBAnimationView alloc] init];
-            [mb setAnimationImage:@"pipo-btleffect078.png" :120 :120 :14];
+            [mb setAnimationImage:@"long.png" :160 :120 :24];
             mb.frame = CGRectMake(p.x, p.y, 120, 120);
-            mb.animationDuration = 0.5;
+            mb.animationDuration = 1.0;
             [self.view addSubview:mb];
             [mb startAnimating];
         }
@@ -827,5 +878,6 @@
     
     return cg;
 }
+
 
 @end

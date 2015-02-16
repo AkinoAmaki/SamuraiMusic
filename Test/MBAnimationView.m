@@ -64,6 +64,14 @@
     self.animationRepeatCount = 1;
 }
 
+-(void)startAnimating{
+    [super startAnimating];
+    [NSTimer scheduledTimerWithTimeInterval:self.animationDuration target:self selector:@selector(remove) userInfo:nil repeats: NO];
+}
+
+-(void)remove{
+    [self removeFromSuperview];
+}
 
 
 /*

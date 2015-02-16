@@ -57,6 +57,11 @@
     
     // 通知センターにオブザーバ（通知を受け取るオブジェクト）を追加
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(returnToStageSelect) name:@"returnToStageSelect" object:nil];
+    
+    //カードタップ音の実装
+    mainBundle = CFBundleGetMainBundle ();
+    tapSoundURL  = CFBundleCopyResourceURL (mainBundle,CFSTR ("se_maoudamashii_battle03"),CFSTR ("mp3"),NULL);
+    AudioServicesCreateSystemSoundID (tapSoundURL, &tapSoundID);
 }
 
 - (void)didReceiveMemoryWarning {
@@ -90,7 +95,6 @@
 #pragma mark UITableViewDelegate Methods
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
-    NSLog(@"mDataSource:%d",[mDataSource count]);
     return  [mDataSource count];
 }
 
@@ -116,8 +120,6 @@
 {
     NSMutableArray *dataSource = [[NSMutableArray alloc] initWithContentsOfFile:[[[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingPathComponent:@"propertyList"] stringByAppendingPathComponent:@"musicName.plist"]];
     [dataSource removeObject:[dataSource lastObject]];
-    
-    NSLog(@"count:%d",[dataSource count]);
     
     mDataSource = [[NSMutableArray alloc] init];
     
@@ -173,6 +175,9 @@
     [self dismissViewControllerAnimated:YES completion:nil];
 }
 
+-(void)tableView:(UITableView *)tableView didEndDisplayingCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath{
+    AudioServicesPlaySystemSound (tapSoundID);
+}
 
 
 /*

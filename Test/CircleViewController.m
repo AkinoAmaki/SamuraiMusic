@@ -54,6 +54,12 @@
     [btn addTarget:self action:@selector(returnToMainView)
   forControlEvents:UIControlEventTouchDown];
     [self.view addSubview:btn];
+    
+    
+    //カードタップ音の実装
+    mainBundle = CFBundleGetMainBundle ();
+    tapSoundURL  = CFBundleCopyResourceURL (mainBundle,CFSTR ("se_maoudamashii_battle03"),CFSTR ("mp3"),NULL);
+    AudioServicesCreateSystemSoundID (tapSoundURL, &tapSoundID);
 }
 
 - (void)viewDidUnload
@@ -190,6 +196,10 @@
     }
     // セルの選択を解除する
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
+}
+
+-(void)tableView:(UITableView *)tableView didEndDisplayingCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath{
+    AudioServicesPlaySystemSound (tapSoundID);
 }
 
 @end

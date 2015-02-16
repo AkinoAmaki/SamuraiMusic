@@ -19,7 +19,7 @@
     float panGestureDuration;
     float longPressGestureDuration;
     NSMutableArray *syokiStages;
-
+    Create3DDimension *dim;
 }
 
 @end
